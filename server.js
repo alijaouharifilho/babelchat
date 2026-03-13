@@ -1,39 +1,189 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
-const { translate, LANG_NAMES } = require('./translator');
+const multer = require('multer');
+const { translate, transcribe, detectLanguage, LANG_NAMES } = require('./translator');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   pingTimeout: 30000,
   pingInterval: 10000,
+  maxHttpBufferSize: 1e7,
+});
+
+// ─── Uploads directory ─────────────────────────────────
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+
+// ─── Multer config ─────────────────────────────────────
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const roomDir = path.join(UPLOADS_DIR, req.body.roomId || '_unknown');
+    if (!fs.existsSync(roomDir)) fs.mkdirSync(roomDir, { recursive: true });
+    cb(null, roomDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${uuidv4()}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
 app.use(express.static('public'));
+app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.json());
 
 // ─── Room storage ──────────────────────────────────────
-// rooms: Map<roomId, { users: Map<socketId, user>, password?, createdAt }>
 const rooms = new Map();
 
-// ─── Validate room slug ────────────────────────────────
-function isValidSlug(slug) {
-  return /^[a-zA-Z0-9][a-zA-Z0-9\-]{1,28}[a-zA-Z0-9]$/.test(slug);
+// ─── Helpers ───────────────────────────────────────────
+function getFileType(mimetype) {
+  if (mimetype.startsWith('image/')) return 'image';
+  if (mimetype.startsWith('audio/')) return 'audio';
+  return 'file';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function translateForRoom(room, text, senderLang) {
+  const langs = new Set();
+  room.users.forEach(u => langs.add(u.language));
+
+  const cache = new Map([[senderLang, text]]);
+
+  await Promise.all(
+    Array.from(langs)
+      .filter(lang => lang !== senderLang)
+      .map(async lang => {
+        cache.set(lang, await translate(text, senderLang, lang));
+      })
+  );
+
+  return cache;
+}
+
+function broadcastMessage(roomId, room, msgBase, translations, senderSid, senderLang) {
+  const timestamp = Date.now();
+  const msgId = uuidv4();
+
+  room.users.forEach((user, sid) => {
+    const translatedText = translations
+      ? (translations.get(user.language) || msgBase.text)
+      : msgBase.text;
+    const isTranslated = translations && user.language !== senderLang;
+
+    io.to(sid).emit('message', {
+      ...msgBase,
+      id: msgId,
+      text: translatedText,
+      original: isTranslated ? (translations.get(senderLang) || msgBase.text) : null,
+      isOwn: sid === senderSid,
+      timestamp,
+    });
+  });
+}
+
+function cleanupRoomFiles(roomId) {
+  const roomDir = path.join(UPLOADS_DIR, roomId);
+  if (fs.existsSync(roomDir)) {
+    fs.rmSync(roomDir, { recursive: true, force: true });
+    console.log(`[${roomId}] Arquivos removidos.`);
+  }
 }
 
 // ─── API: check room ───────────────────────────────────
 app.get('/api/room/:id', (req, res) => {
   const room = rooms.get(req.params.id);
   if (!room) return res.json({ exists: false, hasPassword: false, count: 0 });
-  res.json({
-    exists: true,
-    hasPassword: !!room.password,
-    count: room.users.size,
-    languages: [...new Set(Array.from(room.users.values()).map(u => u.language))],
-  });
+  res.json({ exists: true, hasPassword: !!room.password, count: room.users.size });
+});
+
+// ─── API: file upload ──────────────────────────────────
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    const { roomId, userName, userLang } = req.body;
+    const file = req.file;
+
+    if (!file || !roomId || !userName || !userLang)
+      return res.status(400).json({ error: 'Missing data' });
+
+    const room = rooms.get(roomId);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    // Find sender socket
+    let senderSid = null;
+    room.users.forEach((u, sid) => {
+      if (u.name === userName && u.language === userLang) senderSid = sid;
+    });
+
+    const type = getFileType(file.mimetype);
+    const fileUrl = `/uploads/${roomId}/${file.filename}`;
+
+    console.log(`[${roomId}] ${userName} enviou ${type}: ${file.originalname} (${formatBytes(file.size)})`);
+
+    // ─── AUDIO → Transcribe → Translate → Broadcast ──
+    if (type === 'audio') {
+      const transcript = await transcribe(file.path);
+      if (!transcript) return res.status(500).json({ error: 'Transcription failed' });
+
+      console.log(`[${roomId}] Transcrição: "${transcript}"`);
+
+      const detectedLang = await detectLanguage(transcript) || userLang;
+      const translations = await translateForRoom(room, transcript, detectedLang);
+
+      broadcastMessage(roomId, room, {
+        type: 'audio',
+        from: userName,
+        fromLanguage: userLang,
+        text: transcript,
+        audioUrl: fileUrl,
+      }, translations, senderSid, detectedLang);
+
+      return res.json({ ok: true, type: 'audio', transcript });
+    }
+
+    // ─── IMAGE → Broadcast inline ────────────────────
+    if (type === 'image') {
+      broadcastMessage(roomId, room, {
+        type: 'image',
+        from: userName,
+        fromLanguage: userLang,
+        text: null,
+        imageUrl: fileUrl,
+      }, null, senderSid, userLang);
+
+      return res.json({ ok: true, type: 'image', url: fileUrl });
+    }
+
+    // ─── FILE → Broadcast download card ──────────────
+    broadcastMessage(roomId, room, {
+      type: 'file',
+      from: userName,
+      fromLanguage: userLang,
+      text: null,
+      fileUrl,
+      fileName: file.originalname,
+      fileSize: formatBytes(file.size),
+    }, null, senderSid, userLang);
+
+    return res.json({ ok: true, type: 'file', url: fileUrl });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ error: 'Upload failed' });
+  }
 });
 
 // ─── Socket.io ─────────────────────────────────────────
@@ -48,60 +198,33 @@ io.on('connection', (socket) => {
     const safeName = name.trim().substring(0, 30);
     const safeRoom = roomId.trim().substring(0, 30);
 
-    // ─── Room creation ─────────────────────────────
     if (!rooms.has(safeRoom)) {
-      if (isCreator) {
-        rooms.set(safeRoom, {
-          users: new Map(),
-          password: password || null,
-          createdAt: Date.now(),
-        });
-        console.log(`[${safeRoom}] Sala criada${password ? ' (com senha)' : ''}`);
-      } else {
-        // Joining a room that doesn't exist yet — auto-create without password
-        rooms.set(safeRoom, {
-          users: new Map(),
-          password: null,
-          createdAt: Date.now(),
-        });
-      }
+      rooms.set(safeRoom, {
+        users: new Map(),
+        password: (isCreator && password) ? password : null,
+        createdAt: Date.now(),
+      });
+      console.log(`[${safeRoom}] Sala criada${(isCreator && password) ? ' (com senha)' : ''}`);
     }
 
     const room = rooms.get(safeRoom);
 
-    // ─── Password check ────────────────────────────
-    if (room.password && room.password !== password) {
+    if (room.password && room.password !== password)
       return socket.emit('error-msg', { message: 'Senha incorreta.' });
-    }
 
-    // ─── Check duplicate name ──────────────────────
     const nameExists = Array.from(room.users.values()).some(
       u => u.name.toLowerCase() === safeName.toLowerCase()
     );
-    if (nameExists) {
+    if (nameExists)
       return socket.emit('error-msg', { message: 'Esse nome já está em uso nesta sala.' });
-    }
 
     currentRoom = safeRoom;
     currentUser = { name: safeName, language };
-
     room.users.set(socket.id, { name: safeName, language });
     socket.join(safeRoom);
 
-    // Send room info to the joiner
-    socket.emit('joined', {
-      roomId: safeRoom,
-      hasPassword: !!room.password,
-      users: Array.from(room.users.values()),
-    });
-
-    // Notify room
-    io.to(safeRoom).emit('room-update', {
-      type: 'joined',
-      name: safeName,
-      language,
-      users: Array.from(room.users.values()),
-    });
+    socket.emit('joined', { roomId: safeRoom, hasPassword: !!room.password, users: Array.from(room.users.values()) });
+    io.to(safeRoom).emit('room-update', { type: 'joined', name: safeName, language, users: Array.from(room.users.values()) });
 
     console.log(`[${safeRoom}] ${safeName} (${language}) entrou — ${room.users.size} na sala`);
   });
@@ -113,58 +236,23 @@ io.on('connection', (socket) => {
     if (!room) return;
 
     const trimmed = text.trim().substring(0, 2000);
+    const translations = await translateForRoom(room, trimmed, currentUser.language);
 
-    // Collect unique target languages
-    const langGroups = new Map();
-    room.users.forEach((user, sid) => {
-      if (!langGroups.has(user.language)) langGroups.set(user.language, []);
-      langGroups.get(user.language).push(sid);
-    });
-
-    // Translation cache for this message
-    const cache = new Map([[currentUser.language, trimmed]]);
-
-    // Translate to all unique languages in parallel
-    await Promise.all(
-      Array.from(langGroups.keys())
-        .filter((lang) => lang !== currentUser.language)
-        .map(async (lang) => {
-          const translated = await translate(trimmed, currentUser.language, lang);
-          cache.set(lang, translated);
-        })
-    );
-
-    // Deliver to each user
-    const timestamp = Date.now();
-    const msgId = uuidv4();
-
-    room.users.forEach((user, sid) => {
-      const translatedText = cache.get(user.language) || trimmed;
-      const isTranslated = user.language !== currentUser.language;
-
-      io.to(sid).emit('message', {
-        id: msgId,
-        from: currentUser.name,
-        fromLanguage: currentUser.language,
-        text: translatedText,
-        original: isTranslated ? trimmed : null,
-        isOwn: sid === socket.id,
-        timestamp,
-      });
-    });
+    broadcastMessage(currentRoom, room, {
+      type: 'text',
+      from: currentUser.name,
+      fromLanguage: currentUser.language,
+      text: trimmed,
+    }, translations, socket.id, currentUser.language);
   });
 
   socket.on('typing', ({ isTyping }) => {
     if (!currentRoom || !currentUser) return;
-    socket.to(currentRoom).emit('typing', {
-      name: currentUser.name,
-      isTyping,
-    });
+    socket.to(currentRoom).emit('typing', { name: currentUser.name, isTyping });
   });
 
   socket.on('disconnect', () => {
     if (!currentRoom) return;
-
     const room = rooms.get(currentRoom);
     if (!room) return;
 
@@ -172,13 +260,10 @@ io.on('connection', (socket) => {
 
     if (room.users.size === 0) {
       rooms.delete(currentRoom);
+      cleanupRoomFiles(currentRoom);
       console.log(`[${currentRoom}] Sala encerrada.`);
     } else {
-      io.to(currentRoom).emit('room-update', {
-        type: 'left',
-        name: currentUser?.name,
-        users: Array.from(room.users.values()),
-      });
+      io.to(currentRoom).emit('room-update', { type: 'left', name: currentUser?.name, users: Array.from(room.users.values()) });
       console.log(`[${currentRoom}] ${currentUser?.name} saiu — ${room.users.size} na sala`);
     }
   });

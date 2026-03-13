@@ -26,7 +26,7 @@ const isCreator = params.get('creator') === '1';
 
 if (!roomId || !myName || !myLang) window.location.href = '/';
 
-// Clean URL (remove password from address bar)
+// Clean URL
 if (roomPwd || isCreator) {
   const cleanParams = new URLSearchParams({ room: roomId, name: myName, lang: myLang });
   history.replaceState(null, '', `chat.html?${cleanParams.toString()}`);
@@ -48,7 +48,7 @@ document.getElementById('btn-copy-link').addEventListener('click', () => {
   });
 });
 
-// ─── Notification sound (Web Audio API) ─────────────────
+// ─── Notification sound ─────────────────────────────────
 let audioCtx;
 function playNotifSound() {
   try {
@@ -75,33 +75,22 @@ btnNotif.addEventListener('click', async () => {
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
     notifEnabled = true;
-    btnNotif.textContent = '🔔';
     btnNotif.classList.add('notif-active');
   }
 });
 
 function sendNotification(from, text) {
   if (!notifEnabled || document.hasFocus()) return;
-  try {
-    new Notification(`${from} no BabelChat`, {
-      body: text.substring(0, 100),
-      icon: '/favicon.ico',
-    });
-  } catch {}
+  try { new Notification(`${from} no BabelChat`, { body: (text || '').substring(0, 100) }); } catch {}
 }
 
 // ─── Tab title notifications ────────────────────────────
 let unreadCount = 0;
 const baseTitle = document.title;
-
 function updateTitle() {
   document.title = unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
 }
-
-window.addEventListener('focus', () => {
-  unreadCount = 0;
-  updateTitle();
-});
+window.addEventListener('focus', () => { unreadCount = 0; updateTitle(); });
 
 // ─── Socket.io ──────────────────────────────────────────
 const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionAttempts: 20 });
@@ -109,29 +98,16 @@ const connBar  = document.getElementById('connection-bar');
 const connText = document.getElementById('connection-text');
 
 function joinRoom() {
-  socket.emit('join', {
-    roomId,
-    name: myName,
-    language: myLang,
-    password: roomPwd,
-    isCreator,
-  });
+  socket.emit('join', { roomId, name: myName, language: myLang, password: roomPwd, isCreator });
 }
 
-socket.on('connect', () => {
-  connBar.classList.add('hidden');
-  joinRoom();
-});
-
+socket.on('connect', () => { connBar.classList.add('hidden'); joinRoom(); });
 socket.on('disconnect', () => {
   connText.textContent = 'Conexão perdida... reconectando';
   connBar.classList.remove('hidden');
   connBar.className = 'connection-bar disconnected';
 });
-
-socket.on('reconnect', () => {
-  connBar.classList.add('hidden');
-});
+socket.on('reconnect', () => { connBar.classList.add('hidden'); });
 
 socket.on('error-msg', ({ message }) => {
   alert(message);
@@ -144,22 +120,15 @@ socket.on('joined', ({ hasPassword }) => {
 
 socket.on('room-update', ({ type, name, users }) => {
   updateUserList(users);
-  if (type === 'joined') {
-    addSystemMsg(name === myName ? 'Você entrou na sala 👋' : `${name} entrou`);
-  } else if (type === 'left') {
-    addSystemMsg(`${name} saiu`);
-  }
+  if (type === 'joined') addSystemMsg(name === myName ? 'Você entrou na sala 👋' : `${name} entrou`);
+  else if (type === 'left') addSystemMsg(`${name} saiu`);
 });
 
 socket.on('message', (msg) => {
   removeWelcome();
   addMessage(msg);
-
   if (!msg.isOwn) {
-    if (!document.hasFocus()) {
-      unreadCount++;
-      updateTitle();
-    }
+    if (!document.hasFocus()) { unreadCount++; updateTitle(); }
     playNotifSound();
     sendNotification(msg.from, msg.text);
   }
@@ -170,8 +139,7 @@ const typingUsers = new Set();
 let typingTimer;
 
 socket.on('typing', ({ name, isTyping }) => {
-  if (isTyping) typingUsers.add(name);
-  else typingUsers.delete(name);
+  if (isTyping) typingUsers.add(name); else typingUsers.delete(name);
   renderTyping();
 });
 
@@ -183,7 +151,7 @@ function renderTyping() {
   else el.textContent = `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]} estão digitando...`;
 }
 
-// ─── Send message ────────────────────────────────────────
+// ─── Send text message ──────────────────────────────────
 const msgInput = document.getElementById('message-input');
 const btnSend  = document.getElementById('btn-send');
 
@@ -200,7 +168,6 @@ btnSend.addEventListener('click', sendMessage);
 msgInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
-
 msgInput.addEventListener('input', () => {
   if (msgInput.value.trim()) {
     socket.emit('typing', { isTyping: true });
@@ -212,13 +179,183 @@ msgInput.addEventListener('input', () => {
   }
 });
 
-// ─── DOM helpers ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════
+const fileInput = document.getElementById('file-input');
+const btnAttach = document.getElementById('btn-attach');
+
+btnAttach.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) uploadFile(fileInput.files[0]);
+  fileInput.value = '';
+});
+
+async function uploadFile(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    return addSystemMsg('Arquivo muito grande (máx 10MB)');
+  }
+
+  // Show uploading indicator
+  const placeholderId = addUploadingPlaceholder(file);
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('roomId', roomId);
+  form.append('userName', myName);
+  form.append('userLang', myLang);
+
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: form });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Upload failed');
+    }
+  } catch (err) {
+    addSystemMsg(`Erro ao enviar: ${err.message}`);
+  }
+
+  // Remove uploading placeholder
+  removePlaceholder(placeholderId);
+}
+
+function addUploadingPlaceholder(file) {
+  const id = 'upload-' + Date.now();
+  const area = document.getElementById('messages-area');
+  const el = document.createElement('div');
+  el.className = 'sys-msg uploading';
+  el.id = id;
+  const isAudio = file.type.startsWith('audio/');
+  const label = isAudio ? '🎤 Transcrevendo áudio...' : `📎 Enviando ${file.name}...`;
+  el.innerHTML = `<span class="upload-pill">${label}<span class="spinner"></span></span>`;
+  area.appendChild(el);
+  area.scrollTop = area.scrollHeight;
+  return id;
+}
+
+function removePlaceholder(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ─── Drag & drop ────────────────────────────────────────
+const chatBody = document.querySelector('.chat-body');
+const dropOverlay = document.getElementById('drop-overlay');
+let dragCounter = 0;
+
+chatBody.addEventListener('dragenter', e => {
+  e.preventDefault();
+  dragCounter++;
+  dropOverlay.classList.remove('hidden');
+});
+
+chatBody.addEventListener('dragleave', e => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) { dropOverlay.classList.add('hidden'); dragCounter = 0; }
+});
+
+chatBody.addEventListener('dragover', e => e.preventDefault());
+
+chatBody.addEventListener('drop', e => {
+  e.preventDefault();
+  dragCounter = 0;
+  dropOverlay.classList.add('hidden');
+  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+});
+
+// ═══════════════════════════════════════════════════════
+//  AUDIO RECORDING
+// ═══════════════════════════════════════════════════════
+const btnMic      = document.getElementById('btn-mic');
+const recBar      = document.getElementById('recording-bar');
+const recTimerEl  = document.getElementById('rec-timer');
+const btnRecCancel = document.getElementById('btn-rec-cancel');
+
+let mediaRecorder = null;
+let audioChunks   = [];
+let recInterval   = null;
+let recStartTime  = 0;
+
+btnMic.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording(true); // send
+  } else {
+    await startRecording();
+  }
+});
+
+btnRecCancel.addEventListener('click', () => stopRecording(false)); // discard
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMimeType() });
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop()); // release mic
+    };
+
+    mediaRecorder.start();
+    recStartTime = Date.now();
+
+    // UI
+    btnMic.classList.add('recording');
+    recBar.classList.remove('hidden');
+    recTimerEl.textContent = '0:00';
+    recInterval = setInterval(updateRecTimer, 1000);
+  } catch (err) {
+    addSystemMsg('Não foi possível acessar o microfone.');
+  }
+}
+
+function stopRecording(shouldSend) {
+  if (!mediaRecorder) return;
+
+  mediaRecorder.stop();
+  clearInterval(recInterval);
+  btnMic.classList.remove('recording');
+  recBar.classList.add('hidden');
+
+  if (shouldSend) {
+    // Wait a tiny bit for the last chunk
+    setTimeout(() => {
+      const ext = mediaRecorder.mimeType.includes('webm') ? 'webm' : 'mp4';
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      const file = new File([blob], `audio.${ext}`, { type: mediaRecorder.mimeType });
+      uploadFile(file);
+    }, 200);
+  }
+
+  mediaRecorder = null;
+  audioChunks = [];
+}
+
+function updateRecTimer() {
+  const secs = Math.floor((Date.now() - recStartTime) / 1000);
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  recTimerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function getSupportedMimeType() {
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+  for (const t of types) { if (MediaRecorder.isTypeSupported(t)) return t; }
+  return 'audio/webm';
+}
+
+// ═══════════════════════════════════════════════════════
+//  DOM RENDERING
+// ═══════════════════════════════════════════════════════
 function removeWelcome() {
   const w = document.getElementById('welcome-msg');
   if (w) w.remove();
 }
 
-function addMessage({ from, fromLanguage, text, original, isOwn, timestamp }) {
+function addMessage(msg) {
+  const { type, from, fromLanguage, text, original, isOwn, timestamp, imageUrl, audioUrl, fileUrl, fileName, fileSize } = msg;
   const area = document.getElementById('messages-area');
   const langInfo = LANGUAGES[fromLanguage];
   const flag = langInfo?.flag || '🌐';
@@ -247,12 +384,68 @@ function addMessage({ from, fromLanguage, text, original, isOwn, timestamp }) {
     bubble.appendChild(sender);
   }
 
-  const msgText = document.createElement('div');
-  msgText.className = 'msg-text';
-  msgText.textContent = text;
-  bubble.appendChild(msgText);
+  // ─── IMAGE ────────────────────────────────────────
+  if (type === 'image' && imageUrl) {
+    const img = document.createElement('img');
+    img.className = 'msg-image';
+    img.src = imageUrl;
+    img.alt = 'Imagem';
+    img.loading = 'lazy';
+    img.addEventListener('click', () => window.open(imageUrl, '_blank'));
+    bubble.appendChild(img);
+  }
 
-  // Translated from indicator
+  // ─── AUDIO (transcribed) ──────────────────────────
+  if (type === 'audio') {
+    const audioLabel = document.createElement('div');
+    audioLabel.className = 'msg-audio-label';
+    audioLabel.textContent = '🎤 Mensagem de voz (transcrita)';
+    bubble.appendChild(audioLabel);
+
+    if (text) {
+      const msgText = document.createElement('div');
+      msgText.className = 'msg-text';
+      msgText.textContent = text;
+      bubble.appendChild(msgText);
+    }
+
+    if (audioUrl) {
+      const audio = document.createElement('audio');
+      audio.className = 'msg-audio-player';
+      audio.controls = true;
+      audio.preload = 'metadata';
+      audio.src = audioUrl;
+      bubble.appendChild(audio);
+    }
+  }
+
+  // ─── FILE ─────────────────────────────────────────
+  if (type === 'file' && fileUrl) {
+    const card = document.createElement('a');
+    card.className = 'msg-file-card';
+    card.href = fileUrl;
+    card.target = '_blank';
+    card.download = fileName || 'file';
+    card.innerHTML = `
+      <span class="file-icon">📄</span>
+      <div class="file-info">
+        <span class="file-name">${fileName || 'Arquivo'}</span>
+        <span class="file-size">${fileSize || ''}</span>
+      </div>
+      <span class="file-download">⬇</span>
+    `;
+    bubble.appendChild(card);
+  }
+
+  // ─── TEXT ─────────────────────────────────────────
+  if (type === 'text' && text) {
+    const msgText = document.createElement('div');
+    msgText.className = 'msg-text';
+    msgText.textContent = text;
+    bubble.appendChild(msgText);
+  }
+
+  // ─── "Translated from" indicator ──────────────────
   if (original) {
     const orig = document.createElement('div');
     orig.className = 'msg-original';
@@ -267,12 +460,11 @@ function addMessage({ from, fromLanguage, text, original, isOwn, timestamp }) {
     origText.textContent = original;
     orig.appendChild(origText);
 
-    // Click to expand/collapse original
     orig.addEventListener('click', () => orig.classList.toggle('expanded'));
-
     bubble.appendChild(orig);
   }
 
+  // Timestamp
   const time = document.createElement('div');
   time.className = 'msg-time';
   time.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -300,11 +492,9 @@ function updateUserList(users) {
   const count = document.getElementById('user-count');
   count.textContent = `${users.length} pessoa${users.length !== 1 ? 's' : ''}`;
 
-  // Language stats
   const langCount = {};
   users.forEach(u => { langCount[u.language] = (langCount[u.language] || 0) + 1; });
-  const statsEl = document.getElementById('lang-stats');
-  statsEl.innerHTML = Object.entries(langCount)
+  document.getElementById('lang-stats').innerHTML = Object.entries(langCount)
     .map(([lang, n]) => `<span class="lang-stat">${LANGUAGES[lang]?.flag || '🌐'} ${n}</span>`)
     .join('');
 

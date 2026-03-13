@@ -20,24 +20,38 @@ Chat em tempo real onde cada mensagem é traduzida automaticamente para o idioma
 🇯🇵 Yuki vê: "こんにちは、元気ですか？"
 ```
 
+### Áudio traduzido
+
+```
+🇧🇷 João: 🎤 grava um áudio em português
+         ↓ Whisper transcreve → GPT traduz
+🇺🇸 Mary vê: "Hello, how are you?" + player de áudio original
+🇯🇵 Yuki vê: "こんにちは、元気ですか？" + player de áudio original
+```
+
 ## Features
 
 - **15 idiomas** — PT, EN, ES, FR, DE, ZH, JA, AR, RU, HI, KO, IT, TR, PL, TH
-- **Salas efêmeras** — somem quando todos saem
+- **Salas efêmeras** — somem quando todos saem (arquivos inclusos)
 - **Nomes customizáveis** — crie salas como `viagem-europa` ou `team-standup`
 - **Senha opcional** — proteja salas privadas
 - **Tradução com cache** — LRU cache evita chamadas duplicadas à API
 - **Indicador "traduzido de"** — clique para ver o texto original
 - **Notificações** — som + browser notification quando a aba não está em foco
 - **Reconexão automática** — banner de status se a conexão cair
-- **Zero persistência** — nada é salvo, nada é logado
+- **Envio de imagens** — imagens inline no chat com preview
+- **Envio de arquivos** — qualquer arquivo com card de download
+- **Áudio transcrito** — grave áudio, Whisper transcreve, IA traduz, todos leem no seu idioma + player original
+- **Drag & drop** — arraste arquivos direto na janela do chat
+- **Zero persistência** — nada é salvo permanentemente
 
 ## Stack
 
 | Camada | Tech |
 |---|---|
-| Backend | Node.js + Express + Socket.io |
+| Backend | Node.js + Express + Socket.io + Multer |
 | Tradução | OpenAI GPT-4.1 Nano |
+| Transcrição | OpenAI Whisper |
 | Frontend | Vanilla HTML/CSS/JS |
 | Banco de dados | Nenhum (in-memory) |
 
@@ -45,7 +59,7 @@ Chat em tempo real onde cada mensagem é traduzida automaticamente para o idioma
 
 ```bash
 # Clone
-git clone https://github.com/alifilhomormaii/babelchat.git
+git clone https://github.com/alijaouharifilho/babelchat.git
 cd babelchat
 
 # Instale as dependências
@@ -63,16 +77,6 @@ Acesse `http://localhost:3000`
 
 ## Deploy com Docker
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --production
-COPY . .
-EXPOSE 3000
-CMD ["node", "server.js"]
-```
-
 ```bash
 docker build -t babelchat .
 docker run -d -p 3000:3000 --env-file .env babelchat
@@ -80,23 +84,28 @@ docker run -d -p 3000:3000 --env-file .env babelchat
 
 ## Custo estimado
 
-GPT-4.1 Nano custa **$0.10/1M tokens input** e **$0.40/1M tokens output**.
+| Operação | Modelo | Custo |
+|---|---|---|
+| Tradução de texto | GPT-4.1 Nano | ~$0.00003 por mensagem |
+| Transcrição de áudio | Whisper | $0.006 por minuto |
 
-Uma mensagem de chat (~50 palavras) traduzida custa ~**$0.00003**.
-Isso dá ~**33.000 traduções por dólar**.
+~**33.000 traduções de texto por dólar**.
+Um áudio de 30s custa **$0.003**.
 
 ## Estrutura
 
 ```
 babelchat/
-├── server.js          # Express + Socket.io + lógica das salas
-├── translator.js      # OpenAI wrapper + LRU cache
+├── server.js          # Express + Socket.io + uploads + broadcast
+├── translator.js      # Tradução (Nano) + Transcrição (Whisper) + Cache LRU
 ├── public/
 │   ├── index.html     # Landing page
-│   ├── chat.html      # Chat
-│   ├── style.css      # Dark theme
+│   ├── chat.html      # Chat (com media controls)
+│   ├── style.css      # Dark theme + glassmorphism
 │   ├── app.js         # Lógica da landing
-│   └── chat.js        # Lógica do chat
+│   └── chat.js        # Chat + upload + gravação de áudio
+├── uploads/           # Arquivos temporários (limpos ao fechar sala)
+├── Dockerfile
 ├── .env.example
 └── package.json
 ```
@@ -104,11 +113,12 @@ babelchat/
 ## Roadmap
 
 - [ ] Reações com emoji nas mensagens
-- [ ] Suporte a imagens/links com preview
+- [ ] Preview de links (Open Graph)
 - [ ] Salas permanentes (Redis)
 - [ ] Deploy público com domínio
 - [ ] PWA para mobile
 - [ ] Rate limiting por IP
+- [ ] Tradução de texto em imagens (OCR)
 
 ---
 
