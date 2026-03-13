@@ -37,7 +37,7 @@ LANGUAGES.forEach(lang => {
   const btn = document.createElement('button');
   btn.className = 'lang-btn';
   btn.title = lang.name;
-  btn.innerHTML = `<span class="flag">${lang.flag}</span><span class="code">${lang.code.toUpperCase()}</span>`;
+  btn.innerHTML = `<span class="flag">${lang.flag}</span><span class="lang-name">${lang.name}</span>`;
   btn.addEventListener('click', () => {
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');

@@ -125,12 +125,13 @@ socket.on('room-update', ({ type, name, users }) => {
 });
 
 socket.on('message', (msg) => {
+  console.log('[BabelChat] msg received:', msg.type, msg);
   removeWelcome();
   addMessage(msg);
   if (!msg.isOwn) {
     if (!document.hasFocus()) { unreadCount++; updateTitle(); }
     playNotifSound();
-    sendNotification(msg.from, msg.text);
+    sendNotification(msg.from, msg.text || 'Nova mídia');
   }
 });
 
@@ -294,11 +295,8 @@ async function startRecording() {
     audioChunks = [];
 
     mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = () => {
-      stream.getTracks().forEach(t => t.stop()); // release mic
-    };
 
-    mediaRecorder.start();
+    mediaRecorder.start(100); // collect data every 100ms for reliability
     recStartTime = Date.now();
 
     // UI
@@ -314,23 +312,32 @@ async function startRecording() {
 function stopRecording(shouldSend) {
   if (!mediaRecorder) return;
 
-  mediaRecorder.stop();
+  // Save references BEFORE clearing — stop() is async
+  const recorder = mediaRecorder;
+  const chunks = audioChunks;
+
   clearInterval(recInterval);
   btnMic.classList.remove('recording');
   recBar.classList.add('hidden');
 
-  if (shouldSend) {
-    // Wait a tiny bit for the last chunk
-    setTimeout(() => {
-      const ext = mediaRecorder.mimeType.includes('webm') ? 'webm' : 'mp4';
-      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-      const file = new File([blob], `audio.${ext}`, { type: mediaRecorder.mimeType });
-      uploadFile(file);
-    }, 200);
-  }
-
+  // Reset state immediately so user can start a new recording
   mediaRecorder = null;
   audioChunks = [];
+
+  // onstop fires after all pending ondataavailable events
+  recorder.onstop = () => {
+    // Release microphone
+    recorder.stream.getTracks().forEach(t => t.stop());
+
+    if (shouldSend && chunks.length > 0) {
+      const ext = recorder.mimeType.includes('webm') ? 'webm' : 'mp4';
+      const blob = new Blob(chunks, { type: recorder.mimeType });
+      const file = new File([blob], `audio.${ext}`, { type: recorder.mimeType });
+      uploadFile(file);
+    }
+  };
+
+  recorder.stop(); // triggers remaining ondataavailable, then onstop
 }
 
 function updateRecTimer() {
@@ -349,6 +356,12 @@ function getSupportedMimeType() {
 // ═══════════════════════════════════════════════════════
 //  DOM RENDERING
 // ═══════════════════════════════════════════════════════
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function removeWelcome() {
   const w = document.getElementById('welcome-msg');
   if (w) w.remove();
@@ -385,14 +398,19 @@ function addMessage(msg) {
   }
 
   // ─── IMAGE ────────────────────────────────────────
-  if (type === 'image' && imageUrl) {
+  if ((type === 'image' || (!type && imageUrl)) && imageUrl) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'msg-image-wrap';
+    imgWrap.textContent = 'Carregando imagem...';
+
     const img = document.createElement('img');
     img.className = 'msg-image';
     img.src = imageUrl;
     img.alt = 'Imagem';
-    img.loading = 'lazy';
+    img.onload = () => { imgWrap.textContent = ''; imgWrap.appendChild(img); area.scrollTop = area.scrollHeight; };
+    img.onerror = () => { imgWrap.textContent = '❌ Erro ao carregar imagem'; };
     img.addEventListener('click', () => window.open(imageUrl, '_blank'));
-    bubble.appendChild(img);
+    bubble.appendChild(imgWrap);
   }
 
   // ─── AUDIO (transcribed) ──────────────────────────
@@ -420,17 +438,16 @@ function addMessage(msg) {
   }
 
   // ─── FILE ─────────────────────────────────────────
-  if (type === 'file' && fileUrl) {
+  if ((type === 'file' || (!type && fileUrl)) && fileUrl) {
     const card = document.createElement('a');
     card.className = 'msg-file-card';
     card.href = fileUrl;
-    card.target = '_blank';
     card.download = fileName || 'file';
     card.innerHTML = `
       <span class="file-icon">📄</span>
       <div class="file-info">
-        <span class="file-name">${fileName || 'Arquivo'}</span>
-        <span class="file-size">${fileSize || ''}</span>
+        <span class="file-name">${escapeHtml(fileName || 'Arquivo')}</span>
+        <span class="file-size">${escapeHtml(fileSize || '')}</span>
       </div>
       <span class="file-download">⬇</span>
     `;
@@ -438,7 +455,7 @@ function addMessage(msg) {
   }
 
   // ─── TEXT ─────────────────────────────────────────
-  if (type === 'text' && text) {
+  if ((type === 'text' || !type) && text) {
     const msgText = document.createElement('div');
     msgText.className = 'msg-text';
     msgText.textContent = text;

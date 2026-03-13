@@ -18,14 +18,17 @@ const io = new Server(server, {
 
 // ─── Uploads directory ─────────────────────────────────
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_TMP = path.join(UPLOADS_DIR, '_tmp');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+if (!fs.existsSync(UPLOADS_TMP)) fs.mkdirSync(UPLOADS_TMP);
 
 // ─── Multer config ─────────────────────────────────────
+// NOTE: Save to _tmp first because multer's destination callback
+// runs BEFORE req.body is populated with text fields from FormData.
+// We move the file to the correct room directory in the route handler.
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const roomDir = path.join(UPLOADS_DIR, req.body.roomId || '_unknown');
-    if (!fs.existsSync(roomDir)) fs.mkdirSync(roomDir, { recursive: true });
-    cb(null, roomDir);
+    cb(null, UPLOADS_TMP);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -37,6 +40,15 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
+
+// Move file from _tmp to the correct room directory
+function moveToRoomDir(file, roomId) {
+  const roomDir = path.join(UPLOADS_DIR, roomId);
+  if (!fs.existsSync(roomDir)) fs.mkdirSync(roomDir, { recursive: true });
+  const newPath = path.join(roomDir, file.filename);
+  fs.renameSync(file.path, newPath);
+  return newPath;
+}
 
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOADS_DIR));
@@ -123,6 +135,10 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const room = rooms.get(roomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
+    // Move file from _tmp to the correct room directory
+    const newPath = moveToRoomDir(file, roomId);
+    file.path = newPath;
+
     // Find sender socket
     let senderSid = null;
     room.users.forEach((u, sid) => {
@@ -132,7 +148,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const type = getFileType(file.mimetype);
     const fileUrl = `/uploads/${roomId}/${file.filename}`;
 
-    console.log(`[${roomId}] ${userName} enviou ${type}: ${file.originalname} (${formatBytes(file.size)})`);
+    console.log(`[${roomId}] ${userName} enviou ${type}: ${file.originalname} (${formatBytes(file.size)}) senderSid=${senderSid ? 'found' : 'NOT FOUND'}`);
+    console.log(`[${roomId}] File saved: ${fileUrl}`);
 
     // ─── AUDIO → Transcribe → Translate → Broadcast ──
     if (type === 'audio') {

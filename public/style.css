@@ -159,14 +159,15 @@ input[type="password"]::placeholder { color: var(--muted); }
   background: var(--surface2);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
-  padding: 10px 4px;
+  padding: 10px 6px 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   transition: all 0.15s;
   color: var(--text);
+  overflow: hidden;
 }
 .lang-btn:hover {
   background: rgba(124,106,255,0.1);
@@ -178,9 +179,9 @@ input[type="password"]::placeholder { color: var(--muted); }
   border-color: var(--accent);
   box-shadow: 0 0 14px rgba(124,106,255,0.25);
 }
-.lang-btn .flag { font-size: 22px; }
-.lang-btn .code { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; }
-.lang-btn.selected .code { color: #b4aaff; }
+.lang-btn .flag { font-size: 28px; }
+.lang-btn .lang-name { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 0.2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.lang-btn.selected .lang-name { color: #b4aaff; }
 
 /* Buttons */
 .btn-primary {
@@ -658,6 +659,14 @@ input[type="password"]::placeholder { color: var(--muted); }
 /* ─── Media messages ────────────────────────────────── */
 
 /* Image */
+.msg-image-wrap {
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .msg-image {
   max-width: 100%;
   max-height: 300px;
