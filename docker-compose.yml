@@ -1,0 +1,50 @@
+version: "3.7"
+services:
+  babelchat:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - /opt/babelchat:/app:ro
+      - babelchat_uploads:/app/uploads
+      - babelchat_node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    env_file:
+      - /opt/babelchat/.env
+    entrypoint: sh -c "cd /app && npm ci --production && node server.js"
+    networks:
+      - agentinet
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        # ─── Traefik HTTPS ──────────────────────────
+        - "traefik.enable=true"
+        - "traefik.http.routers.babelchat.rule=Host(`babelchat.com.br`)"
+        - "traefik.http.routers.babelchat.entrypoints=websecure"
+        - "traefik.http.routers.babelchat.tls=true"
+        - "traefik.http.routers.babelchat.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.babelchat.loadbalancer.server.port=3000"
+
+        # ─── HTTP → HTTPS redirect ──────────────────
+        - "traefik.http.routers.babelchat-http.rule=Host(`babelchat.com.br`)"
+        - "traefik.http.routers.babelchat-http.entrypoints=web"
+        - "traefik.http.routers.babelchat-http.middlewares=babelchat-https"
+        - "traefik.http.middlewares.babelchat-https.redirectscheme.scheme=https"
+
+        # ─── WebSocket headers (Socket.io) ───────────
+        - "traefik.http.middlewares.babelchat-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.routers.babelchat.middlewares=babelchat-headers"
+
+volumes:
+  babelchat_uploads:
+  babelchat_node_modules:
+
+networks:
+  agentinet:
+    external: true
+    name: agentinet
