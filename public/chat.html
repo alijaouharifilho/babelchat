@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BabelChat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="chat-page">
+  <div class="chat-layout">
+
+    <!-- Connection banner -->
+    <div class="connection-bar hidden" id="connection-bar">
+      <span id="connection-text">Reconectando...</span>
+    </div>
+
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-left">
+        <span class="logo-small">🗼</span>
+        <span class="header-title">BabelChat</span>
+      </div>
+      <div class="header-center">
+        <span class="room-label">Sala</span>
+        <span class="room-id" id="room-id-display"></span>
+        <span class="room-lock hidden" id="room-lock" title="Sala protegida com senha">🔒</span>
+        <button class="btn-copy" id="btn-copy-link">📋 Copiar link</button>
+      </div>
+      <div class="header-right">
+        <button class="btn-notif" id="btn-notif" title="Ativar notificações">🔔</button>
+        <span class="user-badge">
+          <span id="my-lang-flag"></span>
+          <span id="my-name"></span>
+        </span>
+      </div>
+    </header>
+
+    <div class="chat-body">
+
+      <!-- Messages -->
+      <main class="messages-area" id="messages-area">
+        <div class="welcome-msg" id="welcome-msg">
+          <div class="welcome-icon">🗼</div>
+          <p>Bem-vindo ao BabelChat!</p>
+          <p class="welcome-sub">Compartilhe o link da sala para convidar pessoas do mundo todo.</p>
+        </div>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <span>👥</span>
+          <span id="user-count">0 pessoas</span>
+        </div>
+        <ul class="user-list" id="user-list"></ul>
+        <div class="sidebar-footer">
+          <div class="lang-stats" id="lang-stats"></div>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- Footer / Input -->
+    <footer class="chat-footer">
+      <div class="typing-indicator" id="typing-indicator"></div>
+      <div class="input-area">
+        <input
+          type="text"
+          id="message-input"
+          placeholder="Digite sua mensagem..."
+          maxlength="2000"
+          autocomplete="off"
+        />
+        <button class="btn-send" id="btn-send" title="Enviar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="chat.js"></script>
+</body>
+</html>

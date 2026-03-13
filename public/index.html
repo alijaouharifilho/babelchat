@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BabelChat – Sem barreiras</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="landing-page">
+  <div class="landing">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon">🗼</div>
+        <h1>BabelChat</h1>
+        <p>Converse com qualquer pessoa, em qualquer idioma.</p>
+      </div>
+
+      <!-- Banner: joining existing room -->
+      <div id="room-banner" class="room-banner hidden">
+        <span>🔗</span>
+        <span id="room-banner-text"></span>
+      </div>
+
+      <!-- Error banner -->
+      <div id="error-banner" class="error-banner hidden">
+        <span id="error-text"></span>
+      </div>
+
+      <div class="form">
+        <div class="field">
+          <label for="name-input">Seu nome</label>
+          <input
+            type="text"
+            id="name-input"
+            placeholder="Como quer ser chamado?"
+            maxlength="30"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label>Seu idioma</label>
+          <div class="lang-grid" id="lang-grid"></div>
+        </div>
+
+        <!-- Room creation section (hidden when joining) -->
+        <div id="create-section">
+          <div class="divider"><span>configurar sala</span></div>
+
+          <div class="field">
+            <label for="room-input">Nome da sala <span class="optional">(opcional)</span></label>
+            <input
+              type="text"
+              id="room-input"
+              placeholder="ex: viagem-europa, amigos-2024"
+              maxlength="30"
+              autocomplete="off"
+            />
+            <span class="hint" id="room-hint">Letras, números e hífens. Deixe vazio para gerar um aleatório.</span>
+          </div>
+
+          <div class="field">
+            <label for="password-input">Senha <span class="optional">(opcional)</span></label>
+            <input
+              type="password"
+              id="password-input"
+              placeholder="Deixe vazio para sala aberta"
+              maxlength="50"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <!-- Password prompt (when joining a locked room) -->
+        <div id="password-section" class="hidden">
+          <div class="field">
+            <label for="join-password-input">🔒 Sala protegida — digite a senha</label>
+            <input
+              type="password"
+              id="join-password-input"
+              placeholder="Senha da sala"
+              maxlength="50"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-enter" disabled>
+          Criar Sala e Entrar →
+        </button>
+      </div>
+    </div>
+
+    <p class="footer-note">
+      Salas são efêmeras — somem quando todos saem.
+    </p>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
