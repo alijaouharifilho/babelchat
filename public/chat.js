@@ -36,6 +36,18 @@ if (roomPwd || isCreator) {
 const uiLang = localStorage.getItem('babelchat-ui-lang') || myLang;
 I18n.applyLanguage(uiLang);
 
+// ─── iOS Safari: fix keyboard dismiss leaving input stuck ─
+// visualViewport fires reliably when soft keyboard shows/hides;
+// window.innerHeight / dvh don't always update on dismiss.
+if (window.visualViewport) {
+  const layout = document.querySelector('.chat-layout');
+  const syncHeight = () => {
+    layout.style.height = window.visualViewport.height + 'px';
+    window.scrollTo(0, 0);
+  };
+  window.visualViewport.addEventListener('resize', syncHeight);
+}
+
 // ─── Init header ────────────────────────────────────────
 document.getElementById('room-id-display').textContent = roomId;
 document.getElementById('my-name').textContent = myName;
