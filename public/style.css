@@ -84,6 +84,20 @@ body {
 
 .logo p { color: var(--muted); font-size: 14px; }
 
+/* Typewriter */
+.typewriter { min-height: 1.5em; }
+.typewriter-cursor {
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 300;
+  animation: blink-cursor 0.7s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
 .room-banner {
   display: flex;
   align-items: center;

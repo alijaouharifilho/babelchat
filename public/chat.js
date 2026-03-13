@@ -32,6 +32,10 @@ if (roomPwd || isCreator) {
   history.replaceState(null, '', `chat.html?${cleanParams.toString()}`);
 }
 
+// ─── Apply UI language ──────────────────────────────────
+const uiLang = localStorage.getItem('babelchat-ui-lang') || myLang;
+I18n.applyLanguage(uiLang);
+
 // ─── Init header ────────────────────────────────────────
 document.getElementById('room-id-display').textContent = roomId;
 document.getElementById('my-name').textContent = myName;
@@ -43,8 +47,8 @@ document.getElementById('btn-copy-link').addEventListener('click', () => {
   const url = `${window.location.origin}/?room=${encodeURIComponent(roomId)}`;
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('btn-copy-link');
-    btn.textContent = '✓ Copiado!';
-    setTimeout(() => (btn.textContent = '📋 Copiar link'), 2000);
+    btn.textContent = I18n.t('chat.copied');
+    setTimeout(() => (btn.textContent = I18n.t('chat.copy_link_text')), 2000);
   });
 });
 
@@ -81,7 +85,7 @@ btnNotif.addEventListener('click', async () => {
 
 function sendNotification(from, text) {
   if (!notifEnabled || document.hasFocus()) return;
-  try { new Notification(`${from} no BabelChat`, { body: (text || '').substring(0, 100) }); } catch {}
+  try { new Notification(`${from} ${I18n.t('chat.in_babelchat')}`, { body: (text || '').substring(0, 100) }); } catch {}
 }
 
 // ─── Tab title notifications ────────────────────────────
@@ -103,7 +107,7 @@ function joinRoom() {
 
 socket.on('connect', () => { connBar.classList.add('hidden'); joinRoom(); });
 socket.on('disconnect', () => {
-  connText.textContent = 'Conexão perdida... reconectando';
+  connText.textContent = I18n.t('chat.connection_lost');
   connBar.classList.remove('hidden');
   connBar.className = 'connection-bar disconnected';
 });
@@ -120,8 +124,11 @@ socket.on('joined', ({ hasPassword }) => {
 
 socket.on('room-update', ({ type, name, users }) => {
   updateUserList(users);
-  if (type === 'joined') addSystemMsg(name === myName ? 'Você entrou na sala 👋' : `${name} entrou`);
-  else if (type === 'left') addSystemMsg(`${name} saiu`);
+  if (type === 'joined') {
+    addSystemMsg(name === myName ? I18n.t('chat.you_joined') : I18n.t('chat.user_joined', { name }));
+  } else if (type === 'left') {
+    addSystemMsg(I18n.t('chat.user_left', { name }));
+  }
 });
 
 socket.on('message', (msg) => {
@@ -131,7 +138,7 @@ socket.on('message', (msg) => {
   if (!msg.isOwn) {
     if (!document.hasFocus()) { unreadCount++; updateTitle(); }
     playNotifSound();
-    sendNotification(msg.from, msg.text || 'Nova mídia');
+    sendNotification(msg.from, msg.text || I18n.t('chat.new_media'));
   }
 });
 
@@ -148,8 +155,14 @@ function renderTyping() {
   const el = document.getElementById('typing-indicator');
   const names = Array.from(typingUsers);
   if (!names.length) { el.textContent = ''; return; }
-  if (names.length === 1) el.textContent = `${names[0]} está digitando...`;
-  else el.textContent = `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]} estão digitando...`;
+  if (names.length === 1) {
+    el.textContent = I18n.t('chat.typing_one', { name: names[0] });
+  } else {
+    el.textContent = I18n.t('chat.typing_many', {
+      names: names.slice(0, -1).join(', '),
+      last: names[names.length - 1],
+    });
+  }
 }
 
 // ─── Send text message ──────────────────────────────────
@@ -194,7 +207,7 @@ fileInput.addEventListener('change', () => {
 
 async function uploadFile(file) {
   if (file.size > 10 * 1024 * 1024) {
-    return addSystemMsg('Arquivo muito grande (máx 10MB)');
+    return addSystemMsg(I18n.t('chat.file_too_large'));
   }
 
   // Show uploading indicator
@@ -213,7 +226,7 @@ async function uploadFile(file) {
       throw new Error(err.error || 'Upload failed');
     }
   } catch (err) {
-    addSystemMsg(`Erro ao enviar: ${err.message}`);
+    addSystemMsg(I18n.t('chat.upload_error', { error: err.message }));
   }
 
   // Remove uploading placeholder
@@ -227,7 +240,9 @@ function addUploadingPlaceholder(file) {
   el.className = 'sys-msg uploading';
   el.id = id;
   const isAudio = file.type.startsWith('audio/');
-  const label = isAudio ? '🎤 Transcrevendo áudio...' : `📎 Enviando ${file.name}...`;
+  const label = isAudio
+    ? I18n.t('chat.transcribing_audio')
+    : I18n.t('chat.uploading_file', { filename: file.name });
   el.innerHTML = `<span class="upload-pill">${label}<span class="spinner"></span></span>`;
   area.appendChild(el);
   area.scrollTop = area.scrollHeight;
@@ -305,7 +320,7 @@ async function startRecording() {
     recTimerEl.textContent = '0:00';
     recInterval = setInterval(updateRecTimer, 1000);
   } catch (err) {
-    addSystemMsg('Não foi possível acessar o microfone.');
+    addSystemMsg(I18n.t('chat.mic_error'));
   }
 }
 
@@ -401,14 +416,14 @@ function addMessage(msg) {
   if ((type === 'image' || (!type && imageUrl)) && imageUrl) {
     const imgWrap = document.createElement('div');
     imgWrap.className = 'msg-image-wrap';
-    imgWrap.textContent = 'Carregando imagem...';
+    imgWrap.textContent = I18n.t('chat.loading_image');
 
     const img = document.createElement('img');
     img.className = 'msg-image';
     img.src = imageUrl;
-    img.alt = 'Imagem';
+    img.alt = I18n.t('chat.image_alt');
     img.onload = () => { imgWrap.textContent = ''; imgWrap.appendChild(img); area.scrollTop = area.scrollHeight; };
-    img.onerror = () => { imgWrap.textContent = '❌ Erro ao carregar imagem'; };
+    img.onerror = () => { imgWrap.textContent = I18n.t('chat.image_load_error'); };
     img.addEventListener('click', () => window.open(imageUrl, '_blank'));
     bubble.appendChild(imgWrap);
   }
@@ -417,7 +432,7 @@ function addMessage(msg) {
   if (type === 'audio') {
     const audioLabel = document.createElement('div');
     audioLabel.className = 'msg-audio-label';
-    audioLabel.textContent = '🎤 Mensagem de voz (transcrita)';
+    audioLabel.textContent = I18n.t('chat.voice_message');
     bubble.appendChild(audioLabel);
 
     if (text) {
@@ -446,7 +461,7 @@ function addMessage(msg) {
     card.innerHTML = `
       <span class="file-icon">📄</span>
       <div class="file-info">
-        <span class="file-name">${escapeHtml(fileName || 'Arquivo')}</span>
+        <span class="file-name">${escapeHtml(fileName || I18n.t('chat.file_fallback_name'))}</span>
         <span class="file-size">${escapeHtml(fileSize || '')}</span>
       </div>
       <span class="file-download">⬇</span>
@@ -469,7 +484,7 @@ function addMessage(msg) {
 
     const label = document.createElement('span');
     label.className = 'msg-original-label';
-    label.textContent = `traduzido do ${langName}`;
+    label.textContent = I18n.t('chat.translated_from', { language: langName });
     orig.appendChild(label);
 
     const origText = document.createElement('span');
@@ -507,7 +522,8 @@ function addSystemMsg(text) {
 function updateUserList(users) {
   const list  = document.getElementById('user-list');
   const count = document.getElementById('user-count');
-  count.textContent = `${users.length} pessoa${users.length !== 1 ? 's' : ''}`;
+  const word = users.length !== 1 ? I18n.t('chat.persons') : I18n.t('chat.person');
+  count.textContent = `${users.length} ${word}`;
 
   const langCount = {};
   users.forEach(u => { langCount[u.language] = (langCount[u.language] || 0) + 1; });
@@ -524,7 +540,7 @@ function updateUserList(users) {
     li.innerHTML = `
       <span class="user-flag">${langInfo?.flag || '🌐'}</span>
       <span class="user-name">${user.name}</span>
-      ${isMe ? '<span class="user-you">você</span>' : ''}
+      ${isMe ? `<span class="user-you">${I18n.t('chat.you_badge')}</span>` : ''}
     `;
     li.title = langInfo?.name || user.language;
     list.appendChild(li);

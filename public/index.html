@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BabelChat – Sem barreiras</title>
+  <title>BabelChat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="landing-page">
@@ -12,7 +12,9 @@
       <div class="logo">
         <div class="logo-icon">🗼</div>
         <h1>BabelChat</h1>
-        <p>Converse com qualquer pessoa, em qualquer idioma.</p>
+        <p class="typewriter" id="typewriter">
+          <span id="typewriter-text">Converse com qualquer pessoa, em qualquer idioma.</span><span class="typewriter-cursor">|</span>
+        </p>
       </div>
 
       <!-- Banner: joining existing room -->
@@ -28,10 +30,11 @@
 
       <div class="form">
         <div class="field">
-          <label for="name-input">Seu nome</label>
+          <label for="name-input" data-i18n="landing.your_name">Seu nome</label>
           <input
             type="text"
             id="name-input"
+            data-i18n-placeholder="landing.name_placeholder"
             placeholder="Como quer ser chamado?"
             maxlength="30"
             autocomplete="off"
@@ -39,31 +42,39 @@
         </div>
 
         <div class="field">
-          <label>Seu idioma</label>
+          <label data-i18n="landing.your_language">Seu idioma</label>
           <div class="lang-grid" id="lang-grid"></div>
         </div>
 
         <!-- Room creation section (hidden when joining) -->
         <div id="create-section">
-          <div class="divider"><span>configurar sala</span></div>
+          <div class="divider"><span data-i18n="landing.configure_room">configurar sala</span></div>
 
           <div class="field">
-            <label for="room-input">Nome da sala <span class="optional">(opcional)</span></label>
+            <label for="room-input">
+              <span data-i18n="landing.room_name">Nome da sala</span>
+              <span class="optional" data-i18n="landing.optional">(opcional)</span>
+            </label>
             <input
               type="text"
               id="room-input"
+              data-i18n-placeholder="landing.room_placeholder"
               placeholder="ex: viagem-europa, amigos-2024"
               maxlength="30"
               autocomplete="off"
             />
-            <span class="hint" id="room-hint">Letras, números e hífens. Deixe vazio para gerar um aleatório.</span>
+            <span class="hint" id="room-hint" data-i18n="landing.room_hint">Letras, números e hífens. Deixe vazio para gerar um aleatório.</span>
           </div>
 
           <div class="field">
-            <label for="password-input">Senha <span class="optional">(opcional)</span></label>
+            <label for="password-input">
+              <span data-i18n="landing.password">Senha</span>
+              <span class="optional" data-i18n="landing.optional">(opcional)</span>
+            </label>
             <input
               type="password"
               id="password-input"
+              data-i18n-placeholder="landing.password_placeholder"
               placeholder="Deixe vazio para sala aberta"
               maxlength="50"
               autocomplete="off"
@@ -74,10 +85,11 @@
         <!-- Password prompt (when joining a locked room) -->
         <div id="password-section" class="hidden">
           <div class="field">
-            <label for="join-password-input">🔒 Sala protegida — digite a senha</label>
+            <label for="join-password-input" data-i18n="landing.locked_room">🔒 Sala protegida — digite a senha</label>
             <input
               type="password"
               id="join-password-input"
+              data-i18n-placeholder="landing.room_password_placeholder"
               placeholder="Senha da sala"
               maxlength="50"
               autocomplete="off"
@@ -85,18 +97,19 @@
           </div>
         </div>
 
-        <button class="btn-primary" id="btn-enter" disabled>
+        <button class="btn-primary" id="btn-enter" disabled data-i18n="landing.create_and_enter">
           Criar Sala e Entrar →
         </button>
       </div>
     </div>
 
-    <p class="footer-note">
+    <p class="footer-note" data-i18n="landing.footer_note">
       Salas são efêmeras — somem quando todos saem.
     </p>
   </div>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
