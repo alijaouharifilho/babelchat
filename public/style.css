@@ -254,10 +254,16 @@ input[type="password"]::placeholder { color: var(--muted); }
 }
 
 /* ─── Chat Page ─────────────────────────────────────── */
-.chat-page { height: 100vh; overflow: hidden; }
+/* 100dvh = dynamic viewport height (desconta barras do browser no iOS/Android) */
+.chat-page {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
 
 .chat-layout {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -560,7 +566,8 @@ input[type="password"]::placeholder { color: var(--muted); }
 /* Footer */
 .chat-footer {
   border-top: 1px solid var(--border);
-  padding: 10px 16px 14px;
+  /* env(safe-area-inset-bottom) = espaço acima do home indicator no iPhone */
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
   background: var(--surface);
   flex-shrink: 0;
 }
@@ -770,6 +777,22 @@ input[type="password"]::placeholder { color: var(--muted); }
   .sidebar { display: none; }
   .card { padding: 28px 20px; }
   .header-center { display: none; }
-  .msg-bubble { max-width: 80%; }
+  .msg-bubble { max-width: 85%; }
   .lang-grid { grid-template-columns: repeat(5, 1fr); }
+
+  /* Input area: botões menores no mobile */
+  .btn-icon { width: 36px; height: 36px; }
+  .btn-send { width: 40px; height: 40px; }
+  .input-area input { padding: 10px 14px; font-size: 16px; /* 16px evita zoom automático no iOS */ }
+
+  /* Header: compacto */
+  .chat-header { padding: 8px 12px; min-height: 48px; }
+  .header-right { gap: 6px; }
+  .user-badge { padding: 4px 10px; font-size: 12px; }
+  .btn-copy { display: none; } /* esconde botão copiar link no mobile (espaço curto) */
+
+  /* Landing page no mobile */
+  .landing { padding: 12px; }
+  .logo-icon { font-size: 40px; }
+  .logo h1 { font-size: 24px; }
 }
