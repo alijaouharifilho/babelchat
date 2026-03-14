@@ -84,6 +84,20 @@ body {
 
 .logo p { color: var(--muted); font-size: 14px; }
 
+/* Typewriter */
+.typewriter { min-height: 1.5em; }
+.typewriter-cursor {
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 300;
+  animation: blink-cursor 0.7s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
 .room-banner {
   display: flex;
   align-items: center;
@@ -159,14 +173,15 @@ input[type="password"]::placeholder { color: var(--muted); }
   background: var(--surface2);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
-  padding: 10px 4px;
+  padding: 10px 6px 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   transition: all 0.15s;
   color: var(--text);
+  overflow: hidden;
 }
 .lang-btn:hover {
   background: rgba(124,106,255,0.1);
@@ -178,9 +193,9 @@ input[type="password"]::placeholder { color: var(--muted); }
   border-color: var(--accent);
   box-shadow: 0 0 14px rgba(124,106,255,0.25);
 }
-.lang-btn .flag { font-size: 22px; }
-.lang-btn .code { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; }
-.lang-btn.selected .code { color: #b4aaff; }
+.lang-btn .flag { font-size: 28px; }
+.lang-btn .lang-name { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 0.2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.lang-btn.selected .lang-name { color: #b4aaff; }
 
 /* Buttons */
 .btn-primary {
@@ -239,10 +254,16 @@ input[type="password"]::placeholder { color: var(--muted); }
 }
 
 /* ─── Chat Page ─────────────────────────────────────── */
-.chat-page { height: 100vh; overflow: hidden; }
+/* 100dvh = dynamic viewport height (desconta barras do browser no iOS/Android) */
+.chat-page {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
 
 .chat-layout {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -545,7 +566,8 @@ input[type="password"]::placeholder { color: var(--muted); }
 /* Footer */
 .chat-footer {
   border-top: 1px solid var(--border);
-  padding: 10px 16px 14px;
+  /* env(safe-area-inset-bottom) = espaço acima do home indicator no iPhone */
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
   background: var(--surface);
   flex-shrink: 0;
 }
@@ -556,8 +578,31 @@ input[type="password"]::placeholder { color: var(--muted); }
   margin-bottom: 6px;
   font-style: italic;
 }
-.input-area { display: flex; gap: 10px; align-items: center; }
+.input-area { display: flex; gap: 8px; align-items: center; }
 .input-area input { flex: 1; border-radius: 24px; padding: 12px 18px; font-size: 14px; }
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.btn-icon:hover { color: var(--text); border-color: var(--accent); background: rgba(124,106,255,0.1); }
+
+.btn-mic.recording {
+  background: rgba(248,113,113,0.2);
+  border-color: var(--red);
+  color: var(--red);
+  animation: pulse 1s infinite;
+}
 
 .btn-send {
   width: 44px;
@@ -576,10 +621,155 @@ input[type="password"]::placeholder { color: var(--muted); }
 .btn-send:hover { opacity: 0.9; transform: scale(1.06); }
 .btn-send:active { transform: scale(0.96); }
 
+/* Recording bar */
+.recording-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  animation: fadeUp 0.15s ease;
+}
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+.rec-label { color: var(--red); font-weight: 500; flex: 1; }
+#rec-timer { color: var(--text); font-family: monospace; font-weight: 600; }
+.btn-rec-cancel {
+  background: none;
+  border: 1px solid rgba(248,113,113,0.3);
+  border-radius: 6px;
+  padding: 2px 10px;
+  color: var(--red);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-rec-cancel:hover { background: rgba(248,113,113,0.15); }
+
+/* ─── Drag & drop overlay ───────────────────────────── */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(124,106,255,0.1);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px dashed var(--accent);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+.chat-body { position: relative; }
+.drop-content {
+  text-align: center;
+  color: var(--accent);
+}
+.drop-icon { font-size: 48px; display: block; margin-bottom: 8px; }
+.drop-content p { font-size: 16px; font-weight: 600; }
+
+/* ─── Media messages ────────────────────────────────── */
+
+/* Image */
+.msg-image-wrap {
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.msg-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: block;
+  margin-bottom: 4px;
+  object-fit: cover;
+  transition: opacity 0.15s;
+}
+.msg-image:hover { opacity: 0.85; }
+
+/* Audio label */
+.msg-audio-label {
+  font-size: 11px;
+  color: var(--accent2);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Audio player */
+.msg-audio-player {
+  width: 100%;
+  height: 36px;
+  margin-top: 8px;
+  border-radius: 18px;
+  outline: none;
+}
+.msg-audio-player::-webkit-media-controls-panel {
+  background: var(--surface2);
+}
+
+/* File card */
+.msg-file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.msg-file-card:hover { background: var(--surface2); border-color: var(--accent); }
+.file-icon { font-size: 24px; }
+.file-info { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+.file-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { font-size: 11px; color: var(--muted); }
+.file-download { font-size: 16px; color: var(--accent); }
+
+/* Upload placeholder */
+.upload-pill {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
 /* Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Responsive */
@@ -587,6 +777,22 @@ input[type="password"]::placeholder { color: var(--muted); }
   .sidebar { display: none; }
   .card { padding: 28px 20px; }
   .header-center { display: none; }
-  .msg-bubble { max-width: 80%; }
+  .msg-bubble { max-width: 85%; }
   .lang-grid { grid-template-columns: repeat(5, 1fr); }
+
+  /* Input area: botões menores no mobile */
+  .btn-icon { width: 36px; height: 36px; }
+  .btn-send { width: 40px; height: 40px; }
+  .input-area input { padding: 10px 14px; font-size: 16px; /* 16px evita zoom automático no iOS */ }
+
+  /* Header: compacto */
+  .chat-header { padding: 8px 12px; min-height: 48px; }
+  .header-right { gap: 6px; }
+  .user-badge { padding: 4px 10px; font-size: 12px; }
+  .btn-copy { display: none; } /* esconde botão copiar link no mobile (espaço curto) */
+
+  /* Landing page no mobile */
+  .landing { padding: 12px; }
+  .logo-icon { font-size: 40px; }
+  .logo h1 { font-size: 24px; }
 }

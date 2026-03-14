@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const fs = require('fs');
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -33,7 +34,6 @@ function cacheGet(key) {
   const entry = cache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.ts > CACHE_TTL) { cache.delete(key); return null; }
-  // Move to end (LRU)
   cache.delete(key);
   cache.set(key, entry);
   return entry.val;
@@ -41,7 +41,6 @@ function cacheGet(key) {
 
 function cacheSet(key, val) {
   if (cache.size >= CACHE_MAX) {
-    // Delete oldest entry
     const oldest = cache.keys().next().value;
     cache.delete(oldest);
   }
@@ -82,8 +81,41 @@ async function translate(text, fromLang, toLang) {
   }
 }
 
-function getCacheStats() {
-  return { size: cache.size, max: CACHE_MAX };
+// ─── Transcribe audio (Whisper) ─────────────────────────
+async function transcribe(filePath) {
+  try {
+    const res = await client.audio.transcriptions.create({
+      file: fs.createReadStream(filePath),
+      model: 'whisper-1',
+      response_format: 'json',
+    });
+    return res.text || null;
+  } catch (err) {
+    console.error('Erro de transcrição:', err.message);
+    return null;
+  }
 }
 
-module.exports = { translate, LANG_NAMES, getCacheStats };
+// ─── Detect language from text (best effort) ────────────
+async function detectLanguage(text) {
+  try {
+    const res = await client.chat.completions.create({
+      model: 'gpt-4.1-nano',
+      messages: [
+        {
+          role: 'system',
+          content: 'Detect the language of the text. Reply with ONLY the ISO 639-1 code (e.g. pt, en, es, fr, de, zh, ja, ar, ru, hi, ko, it, tr, pl, th). Nothing else.',
+        },
+        { role: 'user', content: text },
+      ],
+      max_tokens: 5,
+      temperature: 0,
+    });
+    const code = res.choices[0].message.content.trim().toLowerCase();
+    return LANG_NAMES[code] ? code : null;
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { translate, transcribe, detectLanguage, LANG_NAMES };

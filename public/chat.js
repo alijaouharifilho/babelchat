@@ -26,10 +26,26 @@ const isCreator = params.get('creator') === '1';
 
 if (!roomId || !myName || !myLang) window.location.href = '/';
 
-// Clean URL (remove password from address bar)
+// Clean URL
 if (roomPwd || isCreator) {
   const cleanParams = new URLSearchParams({ room: roomId, name: myName, lang: myLang });
   history.replaceState(null, '', `chat.html?${cleanParams.toString()}`);
+}
+
+// ─── Apply UI language ──────────────────────────────────
+const uiLang = localStorage.getItem('babelchat-ui-lang') || myLang;
+I18n.applyLanguage(uiLang);
+
+// ─── iOS Safari: fix keyboard dismiss leaving input stuck ─
+// visualViewport fires reliably when soft keyboard shows/hides;
+// window.innerHeight / dvh don't always update on dismiss.
+if (window.visualViewport) {
+  const layout = document.querySelector('.chat-layout');
+  const syncHeight = () => {
+    layout.style.height = window.visualViewport.height + 'px';
+    window.scrollTo(0, 0);
+  };
+  window.visualViewport.addEventListener('resize', syncHeight);
 }
 
 // ─── Init header ────────────────────────────────────────
@@ -43,12 +59,12 @@ document.getElementById('btn-copy-link').addEventListener('click', () => {
   const url = `${window.location.origin}/?room=${encodeURIComponent(roomId)}`;
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById('btn-copy-link');
-    btn.textContent = '✓ Copiado!';
-    setTimeout(() => (btn.textContent = '📋 Copiar link'), 2000);
+    btn.textContent = I18n.t('chat.copied');
+    setTimeout(() => (btn.textContent = I18n.t('chat.copy_link_text')), 2000);
   });
 });
 
-// ─── Notification sound (Web Audio API) ─────────────────
+// ─── Notification sound ─────────────────────────────────
 let audioCtx;
 function playNotifSound() {
   try {
@@ -75,33 +91,22 @@ btnNotif.addEventListener('click', async () => {
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
     notifEnabled = true;
-    btnNotif.textContent = '🔔';
     btnNotif.classList.add('notif-active');
   }
 });
 
 function sendNotification(from, text) {
   if (!notifEnabled || document.hasFocus()) return;
-  try {
-    new Notification(`${from} no BabelChat`, {
-      body: text.substring(0, 100),
-      icon: '/favicon.ico',
-    });
-  } catch {}
+  try { new Notification(`${from} ${I18n.t('chat.in_babelchat')}`, { body: (text || '').substring(0, 100) }); } catch {}
 }
 
 // ─── Tab title notifications ────────────────────────────
 let unreadCount = 0;
 const baseTitle = document.title;
-
 function updateTitle() {
   document.title = unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
 }
-
-window.addEventListener('focus', () => {
-  unreadCount = 0;
-  updateTitle();
-});
+window.addEventListener('focus', () => { unreadCount = 0; updateTitle(); });
 
 // ─── Socket.io ──────────────────────────────────────────
 const socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionAttempts: 20 });
@@ -109,29 +114,16 @@ const connBar  = document.getElementById('connection-bar');
 const connText = document.getElementById('connection-text');
 
 function joinRoom() {
-  socket.emit('join', {
-    roomId,
-    name: myName,
-    language: myLang,
-    password: roomPwd,
-    isCreator,
-  });
+  socket.emit('join', { roomId, name: myName, language: myLang, password: roomPwd, isCreator });
 }
 
-socket.on('connect', () => {
-  connBar.classList.add('hidden');
-  joinRoom();
-});
-
+socket.on('connect', () => { connBar.classList.add('hidden'); joinRoom(); });
 socket.on('disconnect', () => {
-  connText.textContent = 'Conexão perdida... reconectando';
+  connText.textContent = I18n.t('chat.connection_lost');
   connBar.classList.remove('hidden');
   connBar.className = 'connection-bar disconnected';
 });
-
-socket.on('reconnect', () => {
-  connBar.classList.add('hidden');
-});
+socket.on('reconnect', () => { connBar.classList.add('hidden'); });
 
 socket.on('error-msg', ({ message }) => {
   alert(message);
@@ -145,23 +137,20 @@ socket.on('joined', ({ hasPassword }) => {
 socket.on('room-update', ({ type, name, users }) => {
   updateUserList(users);
   if (type === 'joined') {
-    addSystemMsg(name === myName ? 'Você entrou na sala 👋' : `${name} entrou`);
+    addSystemMsg(name === myName ? I18n.t('chat.you_joined') : I18n.t('chat.user_joined', { name }));
   } else if (type === 'left') {
-    addSystemMsg(`${name} saiu`);
+    addSystemMsg(I18n.t('chat.user_left', { name }));
   }
 });
 
 socket.on('message', (msg) => {
+  console.log('[BabelChat] msg received:', msg.type, msg);
   removeWelcome();
   addMessage(msg);
-
   if (!msg.isOwn) {
-    if (!document.hasFocus()) {
-      unreadCount++;
-      updateTitle();
-    }
+    if (!document.hasFocus()) { unreadCount++; updateTitle(); }
     playNotifSound();
-    sendNotification(msg.from, msg.text);
+    sendNotification(msg.from, msg.text || I18n.t('chat.new_media'));
   }
 });
 
@@ -170,8 +159,7 @@ const typingUsers = new Set();
 let typingTimer;
 
 socket.on('typing', ({ name, isTyping }) => {
-  if (isTyping) typingUsers.add(name);
-  else typingUsers.delete(name);
+  if (isTyping) typingUsers.add(name); else typingUsers.delete(name);
   renderTyping();
 });
 
@@ -179,11 +167,17 @@ function renderTyping() {
   const el = document.getElementById('typing-indicator');
   const names = Array.from(typingUsers);
   if (!names.length) { el.textContent = ''; return; }
-  if (names.length === 1) el.textContent = `${names[0]} está digitando...`;
-  else el.textContent = `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]} estão digitando...`;
+  if (names.length === 1) {
+    el.textContent = I18n.t('chat.typing_one', { name: names[0] });
+  } else {
+    el.textContent = I18n.t('chat.typing_many', {
+      names: names.slice(0, -1).join(', '),
+      last: names[names.length - 1],
+    });
+  }
 }
 
-// ─── Send message ────────────────────────────────────────
+// ─── Send text message ──────────────────────────────────
 const msgInput = document.getElementById('message-input');
 const btnSend  = document.getElementById('btn-send');
 
@@ -200,7 +194,6 @@ btnSend.addEventListener('click', sendMessage);
 msgInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
-
 msgInput.addEventListener('input', () => {
   if (msgInput.value.trim()) {
     socket.emit('typing', { isTyping: true });
@@ -212,13 +205,197 @@ msgInput.addEventListener('input', () => {
   }
 });
 
-// ─── DOM helpers ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════
+const fileInput = document.getElementById('file-input');
+const btnAttach = document.getElementById('btn-attach');
+
+btnAttach.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) uploadFile(fileInput.files[0]);
+  fileInput.value = '';
+});
+
+async function uploadFile(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    return addSystemMsg(I18n.t('chat.file_too_large'));
+  }
+
+  // Show uploading indicator
+  const placeholderId = addUploadingPlaceholder(file);
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('roomId', roomId);
+  form.append('userName', myName);
+  form.append('userLang', myLang);
+
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: form });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Upload failed');
+    }
+  } catch (err) {
+    addSystemMsg(I18n.t('chat.upload_error', { error: err.message }));
+  }
+
+  // Remove uploading placeholder
+  removePlaceholder(placeholderId);
+}
+
+function addUploadingPlaceholder(file) {
+  const id = 'upload-' + Date.now();
+  const area = document.getElementById('messages-area');
+  const el = document.createElement('div');
+  el.className = 'sys-msg uploading';
+  el.id = id;
+  const isAudio = file.type.startsWith('audio/');
+  const label = isAudio
+    ? I18n.t('chat.transcribing_audio')
+    : I18n.t('chat.uploading_file', { filename: file.name });
+  el.innerHTML = `<span class="upload-pill">${label}<span class="spinner"></span></span>`;
+  area.appendChild(el);
+  area.scrollTop = area.scrollHeight;
+  return id;
+}
+
+function removePlaceholder(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ─── Drag & drop ────────────────────────────────────────
+const chatBody = document.querySelector('.chat-body');
+const dropOverlay = document.getElementById('drop-overlay');
+let dragCounter = 0;
+
+chatBody.addEventListener('dragenter', e => {
+  e.preventDefault();
+  dragCounter++;
+  dropOverlay.classList.remove('hidden');
+});
+
+chatBody.addEventListener('dragleave', e => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) { dropOverlay.classList.add('hidden'); dragCounter = 0; }
+});
+
+chatBody.addEventListener('dragover', e => e.preventDefault());
+
+chatBody.addEventListener('drop', e => {
+  e.preventDefault();
+  dragCounter = 0;
+  dropOverlay.classList.add('hidden');
+  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+});
+
+// ═══════════════════════════════════════════════════════
+//  AUDIO RECORDING
+// ═══════════════════════════════════════════════════════
+const btnMic      = document.getElementById('btn-mic');
+const recBar      = document.getElementById('recording-bar');
+const recTimerEl  = document.getElementById('rec-timer');
+const btnRecCancel = document.getElementById('btn-rec-cancel');
+
+let mediaRecorder = null;
+let audioChunks   = [];
+let recInterval   = null;
+let recStartTime  = 0;
+
+btnMic.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording(true); // send
+  } else {
+    await startRecording();
+  }
+});
+
+btnRecCancel.addEventListener('click', () => stopRecording(false)); // discard
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMimeType() });
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+    mediaRecorder.start(100); // collect data every 100ms for reliability
+    recStartTime = Date.now();
+
+    // UI
+    btnMic.classList.add('recording');
+    recBar.classList.remove('hidden');
+    recTimerEl.textContent = '0:00';
+    recInterval = setInterval(updateRecTimer, 1000);
+  } catch (err) {
+    addSystemMsg(I18n.t('chat.mic_error'));
+  }
+}
+
+function stopRecording(shouldSend) {
+  if (!mediaRecorder) return;
+
+  // Save references BEFORE clearing — stop() is async
+  const recorder = mediaRecorder;
+  const chunks = audioChunks;
+
+  clearInterval(recInterval);
+  btnMic.classList.remove('recording');
+  recBar.classList.add('hidden');
+
+  // Reset state immediately so user can start a new recording
+  mediaRecorder = null;
+  audioChunks = [];
+
+  // onstop fires after all pending ondataavailable events
+  recorder.onstop = () => {
+    // Release microphone
+    recorder.stream.getTracks().forEach(t => t.stop());
+
+    if (shouldSend && chunks.length > 0) {
+      const ext = recorder.mimeType.includes('webm') ? 'webm' : 'mp4';
+      const blob = new Blob(chunks, { type: recorder.mimeType });
+      const file = new File([blob], `audio.${ext}`, { type: recorder.mimeType });
+      uploadFile(file);
+    }
+  };
+
+  recorder.stop(); // triggers remaining ondataavailable, then onstop
+}
+
+function updateRecTimer() {
+  const secs = Math.floor((Date.now() - recStartTime) / 1000);
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  recTimerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function getSupportedMimeType() {
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+  for (const t of types) { if (MediaRecorder.isTypeSupported(t)) return t; }
+  return 'audio/webm';
+}
+
+// ═══════════════════════════════════════════════════════
+//  DOM RENDERING
+// ═══════════════════════════════════════════════════════
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function removeWelcome() {
   const w = document.getElementById('welcome-msg');
   if (w) w.remove();
 }
 
-function addMessage({ from, fromLanguage, text, original, isOwn, timestamp }) {
+function addMessage(msg) {
+  const { type, from, fromLanguage, text, original, isOwn, timestamp, imageUrl, audioUrl, fileUrl, fileName, fileSize } = msg;
   const area = document.getElementById('messages-area');
   const langInfo = LANGUAGES[fromLanguage];
   const flag = langInfo?.flag || '🌐';
@@ -247,19 +424,79 @@ function addMessage({ from, fromLanguage, text, original, isOwn, timestamp }) {
     bubble.appendChild(sender);
   }
 
-  const msgText = document.createElement('div');
-  msgText.className = 'msg-text';
-  msgText.textContent = text;
-  bubble.appendChild(msgText);
+  // ─── IMAGE ────────────────────────────────────────
+  if ((type === 'image' || (!type && imageUrl)) && imageUrl) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'msg-image-wrap';
+    imgWrap.textContent = I18n.t('chat.loading_image');
 
-  // Translated from indicator
+    const img = document.createElement('img');
+    img.className = 'msg-image';
+    img.src = imageUrl;
+    img.alt = I18n.t('chat.image_alt');
+    img.onload = () => { imgWrap.textContent = ''; imgWrap.appendChild(img); area.scrollTop = area.scrollHeight; };
+    img.onerror = () => { imgWrap.textContent = I18n.t('chat.image_load_error'); };
+    img.addEventListener('click', () => window.open(imageUrl, '_blank'));
+    bubble.appendChild(imgWrap);
+  }
+
+  // ─── AUDIO (transcribed) ──────────────────────────
+  if (type === 'audio') {
+    const audioLabel = document.createElement('div');
+    audioLabel.className = 'msg-audio-label';
+    audioLabel.textContent = I18n.t('chat.voice_message');
+    bubble.appendChild(audioLabel);
+
+    if (text) {
+      const msgText = document.createElement('div');
+      msgText.className = 'msg-text';
+      msgText.textContent = text;
+      bubble.appendChild(msgText);
+    }
+
+    if (audioUrl) {
+      const audio = document.createElement('audio');
+      audio.className = 'msg-audio-player';
+      audio.controls = true;
+      audio.preload = 'metadata';
+      audio.src = audioUrl;
+      bubble.appendChild(audio);
+    }
+  }
+
+  // ─── FILE ─────────────────────────────────────────
+  if ((type === 'file' || (!type && fileUrl)) && fileUrl) {
+    const card = document.createElement('a');
+    card.className = 'msg-file-card';
+    card.href = fileUrl;
+    card.download = fileName || 'file';
+    card.innerHTML = `
+      <span class="file-icon">📄</span>
+      <div class="file-info">
+        <span class="file-name">${escapeHtml(fileName || I18n.t('chat.file_fallback_name'))}</span>
+        <span class="file-size">${escapeHtml(fileSize || '')}</span>
+      </div>
+      <span class="file-download">⬇</span>
+    `;
+    bubble.appendChild(card);
+  }
+
+  // ─── TEXT ─────────────────────────────────────────
+  if ((type === 'text' || !type) && text) {
+    const msgText = document.createElement('div');
+    msgText.className = 'msg-text';
+    msgText.textContent = text;
+    bubble.appendChild(msgText);
+  }
+
+  // ─── "Translated from" indicator ──────────────────
   if (original) {
     const orig = document.createElement('div');
     orig.className = 'msg-original';
 
     const label = document.createElement('span');
     label.className = 'msg-original-label';
-    label.textContent = `traduzido do ${langName}`;
+    label.textContent = I18n.t('chat.translated_from', { language: langName });
     orig.appendChild(label);
 
     const origText = document.createElement('span');
@@ -267,12 +504,11 @@ function addMessage({ from, fromLanguage, text, original, isOwn, timestamp }) {
     origText.textContent = original;
     orig.appendChild(origText);
 
-    // Click to expand/collapse original
     orig.addEventListener('click', () => orig.classList.toggle('expanded'));
-
     bubble.appendChild(orig);
   }
 
+  // Timestamp
   const time = document.createElement('div');
   time.className = 'msg-time';
   time.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -298,13 +534,12 @@ function addSystemMsg(text) {
 function updateUserList(users) {
   const list  = document.getElementById('user-list');
   const count = document.getElementById('user-count');
-  count.textContent = `${users.length} pessoa${users.length !== 1 ? 's' : ''}`;
+  const word = users.length !== 1 ? I18n.t('chat.persons') : I18n.t('chat.person');
+  count.textContent = `${users.length} ${word}`;
 
-  // Language stats
   const langCount = {};
   users.forEach(u => { langCount[u.language] = (langCount[u.language] || 0) + 1; });
-  const statsEl = document.getElementById('lang-stats');
-  statsEl.innerHTML = Object.entries(langCount)
+  document.getElementById('lang-stats').innerHTML = Object.entries(langCount)
     .map(([lang, n]) => `<span class="lang-stat">${LANGUAGES[lang]?.flag || '🌐'} ${n}</span>`)
     .join('');
 
@@ -317,7 +552,7 @@ function updateUserList(users) {
     li.innerHTML = `
       <span class="user-flag">${langInfo?.flag || '🌐'}</span>
       <span class="user-name">${user.name}</span>
-      ${isMe ? '<span class="user-you">você</span>' : ''}
+      ${isMe ? `<span class="user-you">${I18n.t('chat.you_badge')}</span>` : ''}
     `;
     li.title = langInfo?.name || user.language;
     list.appendChild(li);
