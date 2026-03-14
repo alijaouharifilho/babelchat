@@ -2,7 +2,9 @@
 
 **Converse com qualquer pessoa, em qualquer idioma.**
 
-Chat em tempo real onde cada mensagem é traduzida automaticamente para o idioma de cada participante usando IA. Sem barreiras.
+Chat em tempo real onde cada mensagem é traduzida automaticamente para o idioma de cada participante usando IA. Sem barreiras, zero configuração.
+
+![Demo do BabelChat](demo.gif)
 
 ---
 
@@ -20,39 +22,38 @@ Chat em tempo real onde cada mensagem é traduzida automaticamente para o idioma
 🇯🇵 Yuki vê: "こんにちは、元気ですか？"
 ```
 
-### Áudio traduzido
+## Screenshots
 
-```
-🇧🇷 João: 🎤 grava um áudio em português
-         ↓ Whisper transcreve → GPT traduz
-🇺🇸 Mary vê: "Hello, how are you?" + player de áudio original
-🇯🇵 Yuki vê: "こんにちは、元気ですか？" + player de áudio original
-```
+<p align="center">
+  <img src="screenshot-landing.png" width="30%" alt="Landing page" />
+  <img src="screenshot-room.png"    width="30%" alt="Criando sala" />
+  <img src="screenshot-chat.png"    width="30%" alt="Chat com arquivo" />
+</p>
 
 ## Features
 
 - **15 idiomas** — PT, EN, ES, FR, DE, ZH, JA, AR, RU, HI, KO, IT, TR, PL, TH
-- **Salas efêmeras** — somem quando todos saem (arquivos inclusos)
+- **Interface traduzida** — a UI inteira muda de idioma ao clicar na bandeira
+- **Imagens, arquivos e áudio** — envie mídia; áudios são transcritos automaticamente via Whisper
+- **Salas efêmeras** — somem quando todos saem
 - **Nomes customizáveis** — crie salas como `viagem-europa` ou `team-standup`
 - **Senha opcional** — proteja salas privadas
 - **Tradução com cache** — LRU cache evita chamadas duplicadas à API
 - **Indicador "traduzido de"** — clique para ver o texto original
 - **Notificações** — som + browser notification quando a aba não está em foco
 - **Reconexão automática** — banner de status se a conexão cair
-- **Envio de imagens** — imagens inline no chat com preview
-- **Envio de arquivos** — qualquer arquivo com card de download
-- **Áudio transcrito** — grave áudio, Whisper transcreve, IA traduz, todos leem no seu idioma + player original
-- **Drag & drop** — arraste arquivos direto na janela do chat
-- **Zero persistência** — nada é salvo permanentemente
+- **Mobile-first** — funciona no iPhone/Android sem o input sumir atrás do teclado
+- **Zero persistência** — nada é salvo, nada é logado
 
 ## Stack
 
 | Camada | Tech |
 |---|---|
-| Backend | Node.js + Express + Socket.io + Multer |
+| Backend | Node.js + Express + Socket.io |
 | Tradução | OpenAI GPT-4.1 Nano |
-| Transcrição | OpenAI Whisper |
+| Transcrição de áudio | OpenAI Whisper |
 | Frontend | Vanilla HTML/CSS/JS |
+| Deploy | Docker + Traefik + Portainer |
 | Banco de dados | Nenhum (in-memory) |
 
 ## Setup
@@ -66,8 +67,7 @@ cd babelchat
 npm install
 
 # Configure a chave da OpenAI
-cp .env.example .env
-# edite o .env com sua OPENAI_API_KEY
+echo "OPENAI_API_KEY=sua-chave-aqui" > .env
 
 # Rode
 npm start
@@ -77,48 +77,47 @@ Acesse `http://localhost:3000`
 
 ## Deploy com Docker
 
+Um `docker-compose.yml` pronto para Portainer + Traefik está incluído no repositório.
+
 ```bash
 docker build -t babelchat .
-docker run -d -p 3000:3000 --env-file .env babelchat
+docker run -d -p 3000:3000 -e OPENAI_API_KEY=sua-chave babelchat
 ```
 
 ## Custo estimado
 
-| Operação | Modelo | Custo |
-|---|---|---|
-| Tradução de texto | GPT-4.1 Nano | ~$0.00003 por mensagem |
-| Transcrição de áudio | Whisper | $0.006 por minuto |
+GPT-4.1 Nano custa **$0.10/1M tokens input** e **$0.40/1M tokens output**.
 
-~**33.000 traduções de texto por dólar**.
-Um áudio de 30s custa **$0.003**.
+Uma mensagem de chat (~50 palavras) traduzida custa ~**$0.00003**.
+Isso dá ~**33.000 traduções por dólar**.
 
 ## Estrutura
 
 ```
 babelchat/
-├── server.js          # Express + Socket.io + uploads + broadcast
-├── translator.js      # Tradução (Nano) + Transcrição (Whisper) + Cache LRU
+├── server.js          # Express + Socket.io + lógica das salas
+├── translator.js      # OpenAI wrapper + LRU cache
+├── docker-compose.yml # Stack de produção (Portainer + Traefik)
 ├── public/
 │   ├── index.html     # Landing page
-│   ├── chat.html      # Chat (com media controls)
-│   ├── style.css      # Dark theme + glassmorphism
-│   ├── app.js         # Lógica da landing
-│   └── chat.js        # Chat + upload + gravação de áudio
-├── uploads/           # Arquivos temporários (limpos ao fechar sala)
-├── Dockerfile
-├── .env.example
+│   ├── chat.html      # Chat
+│   ├── style.css      # Dark theme
+│   ├── i18n.js        # Traduções da UI (15 idiomas)
+│   ├── app.js         # Lógica da landing + typewriter
+│   └── chat.js        # Lógica do chat
 └── package.json
 ```
 
 ## Roadmap
 
+- [x] Suporte a imagens, arquivos e áudio
+- [x] Interface multilíngue (i18n, 15 idiomas)
+- [x] Deploy público — [babelchat.com.br](https://babelchat.com.br)
+- [x] Layout mobile (iOS Safari)
 - [ ] Reações com emoji nas mensagens
-- [ ] Preview de links (Open Graph)
 - [ ] Salas permanentes (Redis)
-- [ ] Deploy público com domínio
 - [ ] PWA para mobile
 - [ ] Rate limiting por IP
-- [ ] Tradução de texto em imagens (OCR)
 
 ---
 
