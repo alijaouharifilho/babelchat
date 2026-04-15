@@ -36,9 +36,30 @@ const storage = multer.diskStorage({
   },
 });
 
+// Keep in sync with the `accept` attribute on #file-input in chat.html.
+const ALLOWED_MIME_PREFIXES = ['image/', 'audio/'];
+const ALLOWED_MIME_EXACT = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/zip',
+  'application/x-zip-compressed',
+  'text/plain',
+]);
+
+function isMimeAllowed(mimetype) {
+  if (!mimetype) return false;
+  if (ALLOWED_MIME_PREFIXES.some(p => mimetype.startsWith(p))) return true;
+  return ALLOWED_MIME_EXACT.has(mimetype);
+}
+
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (isMimeAllowed(file.mimetype)) return cb(null, true);
+    cb(new Error('Unsupported file type'));
+  },
 });
 
 // Move file from _tmp to the correct room directory
@@ -123,32 +144,60 @@ app.get('/api/room/:id', (req, res) => {
   res.json({ exists: true, hasPassword: !!room.password, count: room.users.size });
 });
 
+// Delete an uploaded file, best-effort — used when we reject after multer saved it.
+function safeUnlink(filePath) {
+  if (!filePath) return;
+  fs.promises.unlink(filePath).catch(() => {});
+}
+
+// Wrap multer so file-filter rejections and size-limit errors return JSON
+// instead of bubbling up to the default Express error page.
+function uploadSingle(req, res, next) {
+  upload.single('file')(req, res, err => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'File too large (max 10MB)' });
+    }
+    return res.status(400).json({ error: err.message || 'Upload rejected' });
+  });
+}
+
 // ─── API: file upload ──────────────────────────────────
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+app.post('/api/upload', uploadSingle, async (req, res) => {
   try {
-    const { roomId, userName, userLang } = req.body;
+    const { roomId, socketId } = req.body;
     const file = req.file;
 
-    if (!file || !roomId || !userName || !userLang)
+    if (!file || !roomId || !socketId) {
+      safeUnlink(file?.path);
       return res.status(400).json({ error: 'Missing data' });
+    }
 
     const room = rooms.get(roomId);
-    if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (!room) {
+      safeUnlink(file.path);
+      return res.status(404).json({ error: 'Room not found' });
+    }
+
+    // Authorize: the uploader's socket must be a current member of the room.
+    // Prevents anyone who merely knows the room ID from uploading on someone else's behalf.
+    const sender = room.users.get(socketId);
+    if (!sender) {
+      safeUnlink(file.path);
+      return res.status(403).json({ error: 'Not a member of this room' });
+    }
+    const senderSid = socketId;
+    const userName = sender.name;
+    const userLang = sender.language;
 
     // Move file from _tmp to the correct room directory
     const newPath = moveToRoomDir(file, roomId);
     file.path = newPath;
 
-    // Find sender socket
-    let senderSid = null;
-    room.users.forEach((u, sid) => {
-      if (u.name === userName && u.language === userLang) senderSid = sid;
-    });
-
     const type = getFileType(file.mimetype);
     const fileUrl = `/uploads/${roomId}/${file.filename}`;
 
-    console.log(`[${roomId}] ${userName} enviou ${type}: ${file.originalname} (${formatBytes(file.size)}) senderSid=${senderSid ? 'found' : 'NOT FOUND'}`);
+    console.log(`[${roomId}] ${userName} enviou ${type}: ${file.originalname} (${formatBytes(file.size)})`);
     console.log(`[${roomId}] File saved: ${fileUrl}`);
 
     // ─── AUDIO → Transcribe → Translate → Broadcast ──

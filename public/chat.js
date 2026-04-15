@@ -21,13 +21,17 @@ const params    = new URLSearchParams(window.location.search);
 const roomId    = params.get('room');
 const myName    = params.get('name');
 const myLang    = params.get('lang');
-const roomPwd   = params.get('pwd') || '';
 const isCreator = params.get('creator') === '1';
+
+// Password is passed via sessionStorage (set by app.js) to keep it out of
+// URLs, browser history and referer headers. Consume and clear immediately.
+const roomPwd = sessionStorage.getItem('babelchat-room-pwd') || '';
+sessionStorage.removeItem('babelchat-room-pwd');
 
 if (!roomId || !myName || !myLang) window.location.href = '/';
 
-// Clean URL
-if (roomPwd || isCreator) {
+// Clean URL (strip creator flag)
+if (isCreator) {
   const cleanParams = new URLSearchParams({ room: roomId, name: myName, lang: myLang });
   history.replaceState(null, '', `chat.html?${cleanParams.toString()}`);
 }
@@ -228,8 +232,7 @@ async function uploadFile(file) {
   const form = new FormData();
   form.append('file', file);
   form.append('roomId', roomId);
-  form.append('userName', myName);
-  form.append('userLang', myLang);
+  form.append('socketId', socket.id);
 
   try {
     const res = await fetch('/api/upload', { method: 'POST', body: form });

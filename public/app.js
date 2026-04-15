@@ -149,11 +149,17 @@ btnEnter.addEventListener('click', () => {
 });
 
 function goToChat(room, name, lang, password, isCreator) {
+  // Password goes via sessionStorage to avoid leaking into browser history,
+  // referer headers or proxy access logs.
+  if (password) {
+    sessionStorage.setItem('babelchat-room-pwd', password);
+  } else {
+    sessionStorage.removeItem('babelchat-room-pwd');
+  }
   const params = new URLSearchParams({
     room,
     name,
     lang,
-    ...(password && { pwd: password }),
     ...(isCreator && { creator: '1' }),
   });
   window.location.href = `chat.html?${params.toString()}`;
