@@ -600,20 +600,32 @@ function addMessage(msg) {
 
   // ─── "Translated from" indicator ──────────────────
   if (original) {
-    const orig = document.createElement('div');
+    const orig = document.createElement('button');
+    orig.type = 'button';
     orig.className = 'msg-original';
+    orig.setAttribute('aria-expanded', 'false');
 
     const label = document.createElement('span');
     label.className = 'msg-original-label';
     label.textContent = I18n.t('chat.translated_from', { language: langName });
     orig.appendChild(label);
 
+    // Visible chevron — rotates when expanded via CSS.
+    const caret = document.createElement('span');
+    caret.className = 'msg-original-caret';
+    caret.textContent = '▾';
+    caret.setAttribute('aria-hidden', 'true');
+    orig.appendChild(caret);
+
     const origText = document.createElement('span');
     origText.className = 'msg-original-text';
     origText.textContent = original;
     orig.appendChild(origText);
 
-    orig.addEventListener('click', () => orig.classList.toggle('expanded'));
+    orig.addEventListener('click', () => {
+      const expanded = orig.classList.toggle('expanded');
+      orig.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    });
     bubble.appendChild(orig);
   }
 
