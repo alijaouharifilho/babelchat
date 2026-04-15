@@ -677,6 +677,33 @@ input[type="password"]::placeholder { color: var(--muted); }
 .drop-icon { font-size: 48px; display: block; margin-bottom: 8px; }
 .drop-content p { font-size: 16px; font-weight: 600; }
 
+/* ─── Jump-to-bottom pill ───────────────────────────── */
+.jump-to-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  animation: fadeUp 180ms ease-out;
+}
+.jump-to-bottom:hover { filter: brightness(1.1); }
+.jump-to-bottom .jump-arrow { font-size: 15px; line-height: 1; }
+@media (max-width: 640px) {
+  .jump-to-bottom { bottom: 12px; font-size: 12px; padding: 7px 12px; }
+}
+
 /* ─── Media messages ────────────────────────────────── */
 
 /* Image */

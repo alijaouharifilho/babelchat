@@ -67,6 +67,7 @@
       'chat.person': 'pessoa',
       'chat.persons': 'pessoas',
       'chat.you_badge': 'você',
+      'chat.new_messages': 'novas mensagens',
     },
 
     // ═══════════════════════════════════════════════════
@@ -133,6 +134,7 @@
       'chat.person': 'person',
       'chat.persons': 'people',
       'chat.you_badge': 'you',
+      'chat.new_messages': 'new messages',
     },
 
     // ═══════════════════════════════════════════════════
@@ -199,6 +201,7 @@
       'chat.person': 'persona',
       'chat.persons': 'personas',
       'chat.you_badge': 'tú',
+      'chat.new_messages': 'mensajes nuevos',
     },
 
     // ═══════════════════════════════════════════════════
@@ -265,6 +268,7 @@
       'chat.person': 'personne',
       'chat.persons': 'personnes',
       'chat.you_badge': 'vous',
+      'chat.new_messages': 'nouveaux messages',
     },
 
     // ═══════════════════════════════════════════════════
@@ -331,6 +335,7 @@
       'chat.person': 'Person',
       'chat.persons': 'Personen',
       'chat.you_badge': 'du',
+      'chat.new_messages': 'neue Nachrichten',
     },
 
     // ═══════════════════════════════════════════════════
@@ -397,6 +402,7 @@
       'chat.person': '人',
       'chat.persons': '人',
       'chat.you_badge': '你',
+      'chat.new_messages': '条新消息',
     },
 
     // ═══════════════════════════════════════════════════
@@ -463,6 +469,7 @@
       'chat.person': '人',
       'chat.persons': '人',
       'chat.you_badge': 'あなた',
+      'chat.new_messages': '件の新着メッセージ',
     },
 
     // ═══════════════════════════════════════════════════
@@ -529,6 +536,7 @@
       'chat.person': 'شخص',
       'chat.persons': 'أشخاص',
       'chat.you_badge': 'أنت',
+      'chat.new_messages': 'رسائل جديدة',
     },
 
     // ═══════════════════════════════════════════════════
@@ -595,6 +603,7 @@
       'chat.person': 'человек',
       'chat.persons': 'человек',
       'chat.you_badge': 'вы',
+      'chat.new_messages': 'новых сообщений',
     },
 
     // ═══════════════════════════════════════════════════
@@ -661,6 +670,7 @@
       'chat.person': 'व्यक्ति',
       'chat.persons': 'लोग',
       'chat.you_badge': 'आप',
+      'chat.new_messages': 'नए संदेश',
     },
 
     // ═══════════════════════════════════════════════════
@@ -727,6 +737,7 @@
       'chat.person': '명',
       'chat.persons': '명',
       'chat.you_badge': '나',
+      'chat.new_messages': '개의 새 메시지',
     },
 
     // ═══════════════════════════════════════════════════
@@ -793,6 +804,7 @@
       'chat.person': 'persona',
       'chat.persons': 'persone',
       'chat.you_badge': 'tu',
+      'chat.new_messages': 'nuovi messaggi',
     },
 
     // ═══════════════════════════════════════════════════
@@ -859,6 +871,7 @@
       'chat.person': 'kişi',
       'chat.persons': 'kişi',
       'chat.you_badge': 'sen',
+      'chat.new_messages': 'yeni mesaj',
     },
 
     // ═══════════════════════════════════════════════════
@@ -925,6 +938,7 @@
       'chat.person': 'osoba',
       'chat.persons': 'osób',
       'chat.you_badge': 'ty',
+      'chat.new_messages': 'nowych wiadomości',
     },
 
     // ═══════════════════════════════════════════════════
@@ -991,6 +1005,7 @@
       'chat.person': 'คน',
       'chat.persons': 'คน',
       'chat.you_badge': 'คุณ',
+      'chat.new_messages': 'ข้อความใหม่',
     },
   };
 

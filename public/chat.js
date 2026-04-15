@@ -418,6 +418,35 @@ function isNearBottom(area) {
   return area.scrollHeight - area.scrollTop - area.clientHeight < 80;
 }
 
+// ─── Jump-to-bottom pill ────────────────────────────────
+const jumpBtn = document.getElementById('jump-to-bottom');
+const jumpCountEl = document.getElementById('jump-count');
+let jumpCount = 0;
+
+function bumpJumpPill() {
+  jumpCount++;
+  jumpCountEl.textContent = jumpCount;
+  jumpBtn.classList.remove('hidden');
+}
+
+function clearJumpPill() {
+  jumpCount = 0;
+  jumpBtn.classList.add('hidden');
+}
+
+jumpBtn.addEventListener('click', () => {
+  const area = document.getElementById('messages-area');
+  area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
+  clearJumpPill();
+});
+
+// If the user scrolls back to the bottom on their own, hide the pill.
+document.getElementById('messages-area').addEventListener('scroll', () => {
+  if (jumpCount > 0 && isNearBottom(document.getElementById('messages-area'))) {
+    clearJumpPill();
+  }
+});
+
 function addMessage(msg) {
   const { type, from, fromLanguage, text, original, isOwn, timestamp, imageUrl, audioUrl, fileUrl, fileName, fileSize } = msg;
   const area = document.getElementById('messages-area');
@@ -553,6 +582,10 @@ function addMessage(msg) {
   // sent the message themselves (their own message should always appear).
   if (wasAtBottom || isOwn) {
     area.scrollTop = area.scrollHeight;
+  } else if (!isOwn) {
+    // User is reading older messages — bump the jump pill instead of
+    // silently appending below the fold.
+    bumpJumpPill();
   }
 }
 

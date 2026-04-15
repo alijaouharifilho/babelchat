@@ -54,6 +54,15 @@
         </div>
       </main>
 
+      <!-- Floating "jump to bottom" pill. Sibling of .messages-area so it
+           stays anchored to .chat-body (position: relative) instead of
+           scrolling with the message content. -->
+      <button class="jump-to-bottom hidden" id="jump-to-bottom" type="button" aria-live="polite">
+        <span id="jump-count">0</span>
+        <span data-i18n="chat.new_messages">novas mensagens</span>
+        <span class="jump-arrow">↓</span>
+      </button>
+
       <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
