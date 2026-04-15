@@ -68,6 +68,7 @@
       'chat.persons': 'pessoas',
       'chat.you_badge': 'você',
       'chat.new_messages': 'novas mensagens',
+      'chat.change_ui_language': 'Mudar idioma da interface',
     },
 
     // ═══════════════════════════════════════════════════
@@ -135,6 +136,7 @@
       'chat.persons': 'people',
       'chat.you_badge': 'you',
       'chat.new_messages': 'new messages',
+      'chat.change_ui_language': 'Change interface language',
     },
 
     // ═══════════════════════════════════════════════════
@@ -202,6 +204,7 @@
       'chat.persons': 'personas',
       'chat.you_badge': 'tú',
       'chat.new_messages': 'mensajes nuevos',
+      'chat.change_ui_language': 'Cambiar idioma de la interfaz',
     },
 
     // ═══════════════════════════════════════════════════
@@ -269,6 +272,7 @@
       'chat.persons': 'personnes',
       'chat.you_badge': 'vous',
       'chat.new_messages': 'nouveaux messages',
+      'chat.change_ui_language': 'Changer la langue de l\'interface',
     },
 
     // ═══════════════════════════════════════════════════
@@ -336,6 +340,7 @@
       'chat.persons': 'Personen',
       'chat.you_badge': 'du',
       'chat.new_messages': 'neue Nachrichten',
+      'chat.change_ui_language': 'Oberflächensprache ändern',
     },
 
     // ═══════════════════════════════════════════════════
@@ -403,6 +408,7 @@
       'chat.persons': '人',
       'chat.you_badge': '你',
       'chat.new_messages': '条新消息',
+      'chat.change_ui_language': '更改界面语言',
     },
 
     // ═══════════════════════════════════════════════════
@@ -470,6 +476,7 @@
       'chat.persons': '人',
       'chat.you_badge': 'あなた',
       'chat.new_messages': '件の新着メッセージ',
+      'chat.change_ui_language': 'インターフェースの言語を変更',
     },
 
     // ═══════════════════════════════════════════════════
@@ -537,6 +544,7 @@
       'chat.persons': 'أشخاص',
       'chat.you_badge': 'أنت',
       'chat.new_messages': 'رسائل جديدة',
+      'chat.change_ui_language': 'تغيير لغة الواجهة',
     },
 
     // ═══════════════════════════════════════════════════
@@ -604,6 +612,7 @@
       'chat.persons': 'человек',
       'chat.you_badge': 'вы',
       'chat.new_messages': 'новых сообщений',
+      'chat.change_ui_language': 'Изменить язык интерфейса',
     },
 
     // ═══════════════════════════════════════════════════
@@ -671,6 +680,7 @@
       'chat.persons': 'लोग',
       'chat.you_badge': 'आप',
       'chat.new_messages': 'नए संदेश',
+      'chat.change_ui_language': 'इंटरफ़ेस की भाषा बदलें',
     },
 
     // ═══════════════════════════════════════════════════
@@ -738,6 +748,7 @@
       'chat.persons': '명',
       'chat.you_badge': '나',
       'chat.new_messages': '개의 새 메시지',
+      'chat.change_ui_language': '인터페이스 언어 변경',
     },
 
     // ═══════════════════════════════════════════════════
@@ -805,6 +816,7 @@
       'chat.persons': 'persone',
       'chat.you_badge': 'tu',
       'chat.new_messages': 'nuovi messaggi',
+      'chat.change_ui_language': 'Cambia lingua dell\'interfaccia',
     },
 
     // ═══════════════════════════════════════════════════
@@ -872,6 +884,7 @@
       'chat.persons': 'kişi',
       'chat.you_badge': 'sen',
       'chat.new_messages': 'yeni mesaj',
+      'chat.change_ui_language': 'Arayüz dilini değiştir',
     },
 
     // ═══════════════════════════════════════════════════
@@ -939,6 +952,7 @@
       'chat.persons': 'osób',
       'chat.you_badge': 'ty',
       'chat.new_messages': 'nowych wiadomości',
+      'chat.change_ui_language': 'Zmień język interfejsu',
     },
 
     // ═══════════════════════════════════════════════════
@@ -1006,6 +1020,7 @@
       'chat.persons': 'คน',
       'chat.you_badge': 'คุณ',
       'chat.new_messages': 'ข้อความใหม่',
+      'chat.change_ui_language': 'เปลี่ยนภาษาของอินเทอร์เฟซ',
     },
   };
 

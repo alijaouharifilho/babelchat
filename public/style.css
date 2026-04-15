@@ -359,6 +359,54 @@ input[type="password"]::placeholder { color: var(--muted); }
 .btn-notif:hover { opacity: 0.8; border-color: var(--accent); }
 .btn-notif.notif-active { opacity: 1; border-color: var(--green); }
 
+/* ─── UI language switcher (in-chat) ──────────────── */
+.ui-lang-wrap { position: relative; display: inline-block; }
+.btn-ui-lang {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.6;
+}
+.btn-ui-lang:hover,
+.btn-ui-lang[aria-expanded="true"] { opacity: 1; border-color: var(--accent); }
+.ui-lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #1a1a2e;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 200;
+  animation: fadeUp 140ms ease-out;
+}
+.ui-lang-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.ui-lang-item:hover { background: var(--surface2); }
+.ui-lang-item.active { background: var(--surface2); color: var(--accent); font-weight: 600; }
+.ui-lang-flag { font-size: 16px; line-height: 1; }
+
 .user-badge {
   display: flex;
   align-items: center;

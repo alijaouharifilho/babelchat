@@ -27,7 +27,13 @@
         <button class="btn-copy" id="btn-copy-link" data-i18n="chat.copy_link">📋 Copiar link</button>
       </div>
       <div class="header-right">
-        <button class="btn-notif" id="btn-notif" data-i18n-title="chat.enable_notifications" title="Ativar notificações">🔔</button>
+        <!-- UI language switcher. Lets the user change the interface language
+             without leaving the room (they previously had to return to landing). -->
+        <div class="ui-lang-wrap">
+          <button class="btn-ui-lang" id="btn-ui-lang" data-i18n-title="chat.change_ui_language" title="Mudar idioma da interface" aria-haspopup="menu" aria-expanded="false">🌐</button>
+          <div class="ui-lang-menu hidden" id="ui-lang-menu" role="menu"></div>
+        </div>
+        <button class="btn-notif" id="btn-notif" data-i18n-title="chat.enable_notifications" title="Ativar notificações" aria-label="Ativar notificações">🔔</button>
         <span class="user-badge">
           <span id="my-lang-flag"></span>
           <span id="my-name"></span>

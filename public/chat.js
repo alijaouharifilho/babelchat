@@ -40,6 +40,56 @@ if (isCreator) {
 const uiLang = localStorage.getItem('babelchat-ui-lang') || myLang;
 I18n.applyLanguage(uiLang);
 
+// ─── UI language switcher (in-chat) ─────────────────────
+// Users used to be stuck with whatever language they picked on the landing
+// page; if they wanted the UI in a different language they had to leave
+// the room. This dropdown lets them switch in place.
+(function initUiLangSwitcher() {
+  const btn  = document.getElementById('btn-ui-lang');
+  const menu = document.getElementById('ui-lang-menu');
+  if (!btn || !menu) return;
+
+  // Build menu items in the same order as the language code list.
+  Object.entries(LANGUAGES).forEach(([code, info]) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'ui-lang-item';
+    item.setAttribute('role', 'menuitem');
+    item.dataset.code = code;
+    item.innerHTML = `<span class="ui-lang-flag">${info.flag}</span><span class="ui-lang-name">${info.name}</span>`;
+    item.addEventListener('click', () => {
+      I18n.applyLanguage(code);
+      markActive(code);
+      closeMenu();
+    });
+    menu.appendChild(item);
+  });
+
+  function markActive(code) {
+    menu.querySelectorAll('.ui-lang-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.code === code);
+    });
+  }
+  markActive(I18n.getCurrentLang());
+
+  function openMenu()  { menu.classList.remove('hidden'); btn.setAttribute('aria-expanded', 'true');  }
+  function closeMenu() { menu.classList.add('hidden');    btn.setAttribute('aria-expanded', 'false'); }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    menu.classList.contains('hidden') ? openMenu() : closeMenu();
+  });
+
+  // Click outside closes the menu.
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target) && e.target !== btn) closeMenu();
+  });
+  // Esc closes too.
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeMenu();
+  });
+})();
+
 // ─── iOS Safari: fix keyboard dismiss leaving input stuck ─
 // visualViewport fires reliably when soft keyboard shows/hides;
 // window.innerHeight / dvh don't always update on dismiss.
