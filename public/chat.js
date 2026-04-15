@@ -298,7 +298,13 @@ function humanSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function setModalTitle(key) {
+  const el = document.getElementById('upload-modal-title');
+  if (el) el.textContent = I18n.t(key);
+}
+
 function confirmUpload(file) {
+  setModalTitle('chat.upload_preview_title');
   // Build preview content based on file type.
   uploadBody.innerHTML = '';
   const meta = document.createElement('div');
@@ -346,6 +352,82 @@ function confirmUpload(file) {
 
     btnUploadOk.addEventListener('click', onOk);
     btnUploadNo.addEventListener('click', onNo);
+    document.addEventListener('keydown', onKey);
+    uploadModal.addEventListener('click', onBackdrop);
+  });
+}
+
+// Audio-specific preview: playback + Send / Re-record / Discard.
+// Reuses the same modal shell but swaps the body and the action buttons.
+// Resolves to 'send' | 'redo' | 'discard'.
+function confirmAudioUpload(file) {
+  setModalTitle('chat.audio_preview_title');
+  uploadBody.innerHTML = '';
+
+  const audio = document.createElement('audio');
+  audio.className = 'audio-preview-player';
+  audio.controls = true;
+  audio.src = URL.createObjectURL(file);
+  audio.addEventListener('ended', () => URL.revokeObjectURL(audio.src), { once: true });
+  uploadBody.appendChild(audio);
+
+  const meta = document.createElement('div');
+  meta.className = 'upload-preview-meta';
+  meta.innerHTML = `<div class="upload-preview-size">${humanSize(file.size)}</div>`;
+  uploadBody.appendChild(meta);
+
+  // Swap the two default buttons for three (re-record / discard / send).
+  // We don't touch the DOM of the default buttons — we hide them and
+  // inject siblings, then restore on cleanup.
+  const actions = btnUploadOk.parentElement;
+  btnUploadOk.classList.add('hidden');
+  btnUploadNo.classList.add('hidden');
+
+  const btnRedo = document.createElement('button');
+  btnRedo.type = 'button';
+  btnRedo.className = 'btn-secondary';
+  btnRedo.textContent = I18n.t('chat.audio_rerecord');
+
+  const btnDiscard = document.createElement('button');
+  btnDiscard.type = 'button';
+  btnDiscard.className = 'btn-secondary';
+  btnDiscard.textContent = I18n.t('chat.audio_discard');
+
+  const btnSend = document.createElement('button');
+  btnSend.type = 'button';
+  btnSend.className = 'btn-primary';
+  btnSend.textContent = I18n.t('chat.send_title');
+
+  actions.appendChild(btnRedo);
+  actions.appendChild(btnDiscard);
+  actions.appendChild(btnSend);
+
+  uploadModal.classList.remove('hidden');
+  btnSend.focus();
+
+  return new Promise(resolve => {
+    function cleanup(result) {
+      audio.pause();
+      URL.revokeObjectURL(audio.src);
+      uploadModal.classList.add('hidden');
+      actions.removeChild(btnRedo);
+      actions.removeChild(btnDiscard);
+      actions.removeChild(btnSend);
+      btnUploadOk.classList.remove('hidden');
+      btnUploadNo.classList.remove('hidden');
+      document.removeEventListener('keydown', onKey);
+      uploadModal.removeEventListener('click', onBackdrop);
+      resolve(result);
+    }
+    function onKey(e)      {
+      if (e.key === 'Escape') cleanup('discard');
+      if (e.key === 'Enter')  cleanup('send');
+    }
+    function onBackdrop(e) { if (e.target === uploadModal) cleanup('discard'); }
+
+    btnSend.addEventListener('click', () => cleanup('send'));
+    btnRedo.addEventListener('click', () => cleanup('redo'));
+    btnDiscard.addEventListener('click', () => cleanup('discard'));
     document.addEventListener('keydown', onKey);
     uploadModal.addEventListener('click', onBackdrop);
   });
@@ -493,16 +575,22 @@ function stopRecording(shouldSend) {
   audioChunks = [];
 
   // onstop fires after all pending ondataavailable events
-  recorder.onstop = () => {
+  recorder.onstop = async () => {
     // Release microphone
     recorder.stream.getTracks().forEach(t => t.stop());
 
-    if (shouldSend && chunks.length > 0) {
-      const ext = recorder.mimeType.includes('webm') ? 'webm' : 'mp4';
-      const blob = new Blob(chunks, { type: recorder.mimeType });
-      const file = new File([blob], `audio.${ext}`, { type: recorder.mimeType });
-      uploadFile(file);
-    }
+    if (!shouldSend || chunks.length === 0) return;
+
+    const ext = recorder.mimeType.includes('webm') ? 'webm' : 'mp4';
+    const blob = new Blob(chunks, { type: recorder.mimeType });
+    const file = new File([blob], `audio.${ext}`, { type: recorder.mimeType });
+
+    // Review step: let the user listen back, re-record, or discard before
+    // the clip is shipped off to Whisper.
+    const action = await confirmAudioUpload(file);
+    if (action === 'send')     uploadFile(file);
+    else if (action === 'redo') await startRecording();
+    // 'discard' → nothing to do.
   };
 
   recorder.stop(); // triggers remaining ondataavailable, then onstop

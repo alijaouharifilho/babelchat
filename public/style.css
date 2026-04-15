@@ -947,6 +947,11 @@ input[type="password"]::placeholder { color: var(--muted); }
   color: var(--muted);
   margin-top: 2px;
 }
+.audio-preview-player {
+  width: 100%;
+  height: 40px;
+  outline: none;
+}
 
 /* Responsive */
 @media (max-width: 640px) {

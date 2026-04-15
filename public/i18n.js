@@ -70,6 +70,9 @@
       'chat.new_messages': 'novas mensagens',
       'chat.change_ui_language': 'Mudar idioma da interface',
       'chat.upload_preview_title': 'Enviar arquivo',
+      'chat.audio_preview_title': 'Revisar áudio',
+      'chat.audio_rerecord': 'Regravar',
+      'chat.audio_discard': 'Descartar',
     },
 
     // ═══════════════════════════════════════════════════
@@ -139,6 +142,9 @@
       'chat.new_messages': 'new messages',
       'chat.change_ui_language': 'Change interface language',
       'chat.upload_preview_title': 'Send file',
+      'chat.audio_preview_title': 'Review audio',
+      'chat.audio_rerecord': 'Re-record',
+      'chat.audio_discard': 'Discard',
     },
 
     // ═══════════════════════════════════════════════════
@@ -208,6 +214,9 @@
       'chat.new_messages': 'mensajes nuevos',
       'chat.change_ui_language': 'Cambiar idioma de la interfaz',
       'chat.upload_preview_title': 'Enviar archivo',
+      'chat.audio_preview_title': 'Revisar audio',
+      'chat.audio_rerecord': 'Volver a grabar',
+      'chat.audio_discard': 'Descartar',
     },
 
     // ═══════════════════════════════════════════════════
@@ -277,6 +286,9 @@
       'chat.new_messages': 'nouveaux messages',
       'chat.change_ui_language': 'Changer la langue de l\'interface',
       'chat.upload_preview_title': 'Envoyer un fichier',
+      'chat.audio_preview_title': 'Vérifier l\'audio',
+      'chat.audio_rerecord': 'Réenregistrer',
+      'chat.audio_discard': 'Supprimer',
     },
 
     // ═══════════════════════════════════════════════════
@@ -346,6 +358,9 @@
       'chat.new_messages': 'neue Nachrichten',
       'chat.change_ui_language': 'Oberflächensprache ändern',
       'chat.upload_preview_title': 'Datei senden',
+      'chat.audio_preview_title': 'Audio prüfen',
+      'chat.audio_rerecord': 'Neu aufnehmen',
+      'chat.audio_discard': 'Verwerfen',
     },
 
     // ═══════════════════════════════════════════════════
@@ -415,6 +430,9 @@
       'chat.new_messages': '条新消息',
       'chat.change_ui_language': '更改界面语言',
       'chat.upload_preview_title': '发送文件',
+      'chat.audio_preview_title': '检查音频',
+      'chat.audio_rerecord': '重新录制',
+      'chat.audio_discard': '丢弃',
     },
 
     // ═══════════════════════════════════════════════════
@@ -484,6 +502,9 @@
       'chat.new_messages': '件の新着メッセージ',
       'chat.change_ui_language': 'インターフェースの言語を変更',
       'chat.upload_preview_title': 'ファイルを送信',
+      'chat.audio_preview_title': '音声を確認',
+      'chat.audio_rerecord': '録音し直す',
+      'chat.audio_discard': '破棄',
     },
 
     // ═══════════════════════════════════════════════════
@@ -553,6 +574,9 @@
       'chat.new_messages': 'رسائل جديدة',
       'chat.change_ui_language': 'تغيير لغة الواجهة',
       'chat.upload_preview_title': 'إرسال ملف',
+      'chat.audio_preview_title': 'مراجعة الصوت',
+      'chat.audio_rerecord': 'إعادة التسجيل',
+      'chat.audio_discard': 'تجاهل',
     },
 
     // ═══════════════════════════════════════════════════
@@ -622,6 +646,9 @@
       'chat.new_messages': 'новых сообщений',
       'chat.change_ui_language': 'Изменить язык интерфейса',
       'chat.upload_preview_title': 'Отправить файл',
+      'chat.audio_preview_title': 'Проверить аудио',
+      'chat.audio_rerecord': 'Записать заново',
+      'chat.audio_discard': 'Отклонить',
     },
 
     // ═══════════════════════════════════════════════════
@@ -691,6 +718,9 @@
       'chat.new_messages': 'नए संदेश',
       'chat.change_ui_language': 'इंटरफ़ेस की भाषा बदलें',
       'chat.upload_preview_title': 'फ़ाइल भेजें',
+      'chat.audio_preview_title': 'ऑडियो की समीक्षा करें',
+      'chat.audio_rerecord': 'फिर से रिकॉर्ड करें',
+      'chat.audio_discard': 'हटाएं',
     },
 
     // ═══════════════════════════════════════════════════
@@ -760,6 +790,9 @@
       'chat.new_messages': '개의 새 메시지',
       'chat.change_ui_language': '인터페이스 언어 변경',
       'chat.upload_preview_title': '파일 보내기',
+      'chat.audio_preview_title': '오디오 확인',
+      'chat.audio_rerecord': '다시 녹음',
+      'chat.audio_discard': '버리기',
     },
 
     // ═══════════════════════════════════════════════════
@@ -829,6 +862,9 @@
       'chat.new_messages': 'nuovi messaggi',
       'chat.change_ui_language': 'Cambia lingua dell\'interfaccia',
       'chat.upload_preview_title': 'Invia file',
+      'chat.audio_preview_title': 'Controlla audio',
+      'chat.audio_rerecord': 'Registra di nuovo',
+      'chat.audio_discard': 'Scarta',
     },
 
     // ═══════════════════════════════════════════════════
@@ -898,6 +934,9 @@
       'chat.new_messages': 'yeni mesaj',
       'chat.change_ui_language': 'Arayüz dilini değiştir',
       'chat.upload_preview_title': 'Dosya gönder',
+      'chat.audio_preview_title': 'Sesi gözden geçir',
+      'chat.audio_rerecord': 'Yeniden kaydet',
+      'chat.audio_discard': 'Sil',
     },
 
     // ═══════════════════════════════════════════════════
@@ -967,6 +1006,9 @@
       'chat.new_messages': 'nowych wiadomości',
       'chat.change_ui_language': 'Zmień język interfejsu',
       'chat.upload_preview_title': 'Wyślij plik',
+      'chat.audio_preview_title': 'Sprawdź nagranie',
+      'chat.audio_rerecord': 'Nagraj ponownie',
+      'chat.audio_discard': 'Odrzuć',
     },
 
     // ═══════════════════════════════════════════════════
@@ -1036,6 +1078,9 @@
       'chat.new_messages': 'ข้อความใหม่',
       'chat.change_ui_language': 'เปลี่ยนภาษาของอินเทอร์เฟซ',
       'chat.upload_preview_title': 'ส่งไฟล์',
+      'chat.audio_preview_title': 'ตรวจสอบเสียง',
+      'chat.audio_rerecord': 'บันทึกใหม่',
+      'chat.audio_discard': 'ทิ้ง',
     },
   };
 
