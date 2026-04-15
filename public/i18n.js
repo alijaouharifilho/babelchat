@@ -73,6 +73,9 @@
       'chat.audio_preview_title': 'Revisar áudio',
       'chat.audio_rerecord': 'Regravar',
       'chat.audio_discard': 'Descartar',
+      'chat.jump_to_bottom_label': 'Ir para a mensagem mais recente',
+      'chat.messages_log_label': 'Mensagens da sala',
+      'chat.users_list_label': 'Participantes da sala',
     },
 
     // ═══════════════════════════════════════════════════
@@ -145,6 +148,9 @@
       'chat.audio_preview_title': 'Review audio',
       'chat.audio_rerecord': 'Re-record',
       'chat.audio_discard': 'Discard',
+      'chat.jump_to_bottom_label': 'Jump to latest message',
+      'chat.messages_log_label': 'Room messages',
+      'chat.users_list_label': 'Room participants',
     },
 
     // ═══════════════════════════════════════════════════
@@ -217,6 +223,9 @@
       'chat.audio_preview_title': 'Revisar audio',
       'chat.audio_rerecord': 'Volver a grabar',
       'chat.audio_discard': 'Descartar',
+      'chat.jump_to_bottom_label': 'Ir al mensaje más reciente',
+      'chat.messages_log_label': 'Mensajes de la sala',
+      'chat.users_list_label': 'Participantes de la sala',
     },
 
     // ═══════════════════════════════════════════════════
@@ -289,6 +298,9 @@
       'chat.audio_preview_title': 'Vérifier l\'audio',
       'chat.audio_rerecord': 'Réenregistrer',
       'chat.audio_discard': 'Supprimer',
+      'chat.jump_to_bottom_label': 'Aller au dernier message',
+      'chat.messages_log_label': 'Messages du salon',
+      'chat.users_list_label': 'Participants du salon',
     },
 
     // ═══════════════════════════════════════════════════
@@ -361,6 +373,9 @@
       'chat.audio_preview_title': 'Audio prüfen',
       'chat.audio_rerecord': 'Neu aufnehmen',
       'chat.audio_discard': 'Verwerfen',
+      'chat.jump_to_bottom_label': 'Zur neuesten Nachricht springen',
+      'chat.messages_log_label': 'Raum-Nachrichten',
+      'chat.users_list_label': 'Raum-Teilnehmer',
     },
 
     // ═══════════════════════════════════════════════════
@@ -433,6 +448,9 @@
       'chat.audio_preview_title': '检查音频',
       'chat.audio_rerecord': '重新录制',
       'chat.audio_discard': '丢弃',
+      'chat.jump_to_bottom_label': '跳转到最新消息',
+      'chat.messages_log_label': '房间消息',
+      'chat.users_list_label': '房间参与者',
     },
 
     // ═══════════════════════════════════════════════════
@@ -505,6 +523,9 @@
       'chat.audio_preview_title': '音声を確認',
       'chat.audio_rerecord': '録音し直す',
       'chat.audio_discard': '破棄',
+      'chat.jump_to_bottom_label': '最新のメッセージへ移動',
+      'chat.messages_log_label': 'ルームのメッセージ',
+      'chat.users_list_label': 'ルームの参加者',
     },
 
     // ═══════════════════════════════════════════════════
@@ -577,6 +598,9 @@
       'chat.audio_preview_title': 'مراجعة الصوت',
       'chat.audio_rerecord': 'إعادة التسجيل',
       'chat.audio_discard': 'تجاهل',
+      'chat.jump_to_bottom_label': 'الانتقال إلى آخر رسالة',
+      'chat.messages_log_label': 'رسائل الغرفة',
+      'chat.users_list_label': 'المشاركون في الغرفة',
     },
 
     // ═══════════════════════════════════════════════════
@@ -649,6 +673,9 @@
       'chat.audio_preview_title': 'Проверить аудио',
       'chat.audio_rerecord': 'Записать заново',
       'chat.audio_discard': 'Отклонить',
+      'chat.jump_to_bottom_label': 'Перейти к последнему сообщению',
+      'chat.messages_log_label': 'Сообщения комнаты',
+      'chat.users_list_label': 'Участники комнаты',
     },
 
     // ═══════════════════════════════════════════════════
@@ -721,6 +748,9 @@
       'chat.audio_preview_title': 'ऑडियो की समीक्षा करें',
       'chat.audio_rerecord': 'फिर से रिकॉर्ड करें',
       'chat.audio_discard': 'हटाएं',
+      'chat.jump_to_bottom_label': 'नवीनतम संदेश पर जाएं',
+      'chat.messages_log_label': 'कमरे के संदेश',
+      'chat.users_list_label': 'कमरे के प्रतिभागी',
     },
 
     // ═══════════════════════════════════════════════════
@@ -793,6 +823,9 @@
       'chat.audio_preview_title': '오디오 확인',
       'chat.audio_rerecord': '다시 녹음',
       'chat.audio_discard': '버리기',
+      'chat.jump_to_bottom_label': '최신 메시지로 이동',
+      'chat.messages_log_label': '방 메시지',
+      'chat.users_list_label': '방 참가자',
     },
 
     // ═══════════════════════════════════════════════════
@@ -865,6 +898,9 @@
       'chat.audio_preview_title': 'Controlla audio',
       'chat.audio_rerecord': 'Registra di nuovo',
       'chat.audio_discard': 'Scarta',
+      'chat.jump_to_bottom_label': 'Vai al messaggio più recente',
+      'chat.messages_log_label': 'Messaggi della stanza',
+      'chat.users_list_label': 'Partecipanti della stanza',
     },
 
     // ═══════════════════════════════════════════════════
@@ -937,6 +973,9 @@
       'chat.audio_preview_title': 'Sesi gözden geçir',
       'chat.audio_rerecord': 'Yeniden kaydet',
       'chat.audio_discard': 'Sil',
+      'chat.jump_to_bottom_label': 'En son mesaja git',
+      'chat.messages_log_label': 'Oda mesajları',
+      'chat.users_list_label': 'Oda katılımcıları',
     },
 
     // ═══════════════════════════════════════════════════
@@ -1009,6 +1048,9 @@
       'chat.audio_preview_title': 'Sprawdź nagranie',
       'chat.audio_rerecord': 'Nagraj ponownie',
       'chat.audio_discard': 'Odrzuć',
+      'chat.jump_to_bottom_label': 'Przejdź do najnowszej wiadomości',
+      'chat.messages_log_label': 'Wiadomości pokoju',
+      'chat.users_list_label': 'Uczestnicy pokoju',
     },
 
     // ═══════════════════════════════════════════════════
@@ -1081,6 +1123,9 @@
       'chat.audio_preview_title': 'ตรวจสอบเสียง',
       'chat.audio_rerecord': 'บันทึกใหม่',
       'chat.audio_discard': 'ทิ้ง',
+      'chat.jump_to_bottom_label': 'ไปที่ข้อความล่าสุด',
+      'chat.messages_log_label': 'ข้อความของห้อง',
+      'chat.users_list_label': 'ผู้เข้าร่วมห้อง',
     },
   };
 
@@ -1114,6 +1159,11 @@
     // Tooltips
     document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
       el.title = t(el.getAttribute('data-i18n-title'));
+    });
+    // ARIA labels. For icon-only buttons the accessible name comes from
+    // aria-label, not visible text, so we translate it the same way.
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(function (el) {
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
   }
 
