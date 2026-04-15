@@ -148,6 +148,9 @@ socket.on('room-update', ({ type, name, users }) => {
   if (type === 'joined') {
     addSystemMsg(name === myName ? I18n.t('chat.you_joined') : I18n.t('chat.user_joined', { name }));
   } else if (type === 'left') {
+    // Clear any stale "typing" state for the user who just left, otherwise
+    // the indicator sticks around forever.
+    if (typingUsers.delete(name)) renderTyping();
     addSystemMsg(I18n.t('chat.user_left', { name }));
   }
 });
@@ -324,8 +327,9 @@ btnMic.addEventListener('click', async () => {
 btnRecCancel.addEventListener('click', () => stopRecording(false)); // discard
 
 async function startRecording() {
+  let stream = null;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMimeType() });
     audioChunks = [];
 
@@ -340,6 +344,11 @@ async function startRecording() {
     recTimerEl.textContent = '0:00';
     recInterval = setInterval(updateRecTimer, 1000);
   } catch (err) {
+    // If getUserMedia succeeded but something after it threw (e.g. unsupported
+    // mimeType on MediaRecorder), release the mic instead of leaking the
+    // stream and leaving the browser recording indicator on.
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    mediaRecorder = null;
     addSystemMsg(I18n.t('chat.mic_error'));
   }
 }
@@ -402,9 +411,17 @@ function removeWelcome() {
   if (w) w.remove();
 }
 
+// "Near the bottom" = within 80px. Keeps auto-scroll working even if the
+// user is a few pixels off, but stops hijacking their scroll when they're
+// reading older messages.
+function isNearBottom(area) {
+  return area.scrollHeight - area.scrollTop - area.clientHeight < 80;
+}
+
 function addMessage(msg) {
   const { type, from, fromLanguage, text, original, isOwn, timestamp, imageUrl, audioUrl, fileUrl, fileName, fileSize } = msg;
   const area = document.getElementById('messages-area');
+  const wasAtBottom = isNearBottom(area);
   const langInfo = LANGUAGES[fromLanguage];
   const flag = langInfo?.flag || '🌐';
   const langName = langInfo?.name || fromLanguage;
@@ -442,7 +459,12 @@ function addMessage(msg) {
     img.className = 'msg-image';
     img.src = imageUrl;
     img.alt = I18n.t('chat.image_alt');
-    img.onload = () => { imgWrap.textContent = ''; imgWrap.appendChild(img); area.scrollTop = area.scrollHeight; };
+    img.onload = () => {
+      imgWrap.textContent = '';
+      imgWrap.appendChild(img);
+      // Same rule: don't yank the user's scroll if they're reading older messages.
+      if (isNearBottom(area) || isOwn) area.scrollTop = area.scrollHeight;
+    };
     img.onerror = () => { imgWrap.textContent = I18n.t('chat.image_load_error'); };
     img.addEventListener('click', () => window.open(imageUrl, '_blank'));
     bubble.appendChild(imgWrap);
@@ -527,7 +549,11 @@ function addMessage(msg) {
   group.appendChild(row);
   area.appendChild(group);
 
-  area.scrollTop = area.scrollHeight;
+  // Only auto-scroll if the user was already at the bottom, OR they just
+  // sent the message themselves (their own message should always appear).
+  if (wasAtBottom || isOwn) {
+    area.scrollTop = area.scrollHeight;
+  }
 }
 
 function addSystemMsg(text) {
