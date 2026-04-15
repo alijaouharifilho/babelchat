@@ -2,9 +2,9 @@
 
 # 🗼 BabelChat
 
-**Chat em tempo real com tradução automática por IA**
+**Real-time chat with automatic AI translation**
 
-Converse com qualquer pessoa, em qualquer idioma — sem barreiras, zero configuração.
+Talk to anyone, in any language — no barriers, zero configuration.
 
 [![Live Demo](https://img.shields.io/badge/▶%20Live%20Demo-babelchat.com.br-7c6aff?style=for-the-badge&logo=googlechrome&logoColor=white)](https://babelchat.com.br)
 [![GitHub Stars](https://img.shields.io/github/stars/alijaouharifilho/babelchat?style=for-the-badge&color=ff6b9d&logo=github)](https://github.com/alijaouharifilho/babelchat/stargazers)
@@ -12,132 +12,134 @@ Converse com qualquer pessoa, em qualquer idioma — sem barreiras, zero configu
 [![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4.1%20Nano-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
 
-![Demo do BabelChat](demo.gif)
+🌐 **Read this in:** [English](README.md) · [Português](README.pt.md)
+
+![BabelChat Demo](demo.gif)
 
 </div>
 
 ---
 
-## Como funciona
+## How it works
 
 ```
-🇧🇷 João digita:   "Olá, tudo bem?"
+🇧🇷 João types:   "Olá, tudo bem?"
 
-         ↓  GPT-4.1 Nano traduz em tempo real
+         ↓  GPT-4.1 Nano translates in real time
 
-🇺🇸 Mary  vê:  "Hello, how are you?"
-🇯🇵 Yuki  vê:  "こんにちは、元気ですか？"
-🇸🇦 Ahmed vê:  "مرحباً، كيف حالك؟"
+🇺🇸 Mary  sees:  "Hello, how are you?"
+🇯🇵 Yuki  sees:  "こんにちは、元気ですか？"
+🇸🇦 Ahmed sees:  "مرحباً، كيف حالك؟"
 ```
 
-1. Entre numa sala e escolha seu idioma
-2. Compartilhe o link com quem quiser
-3. Conversem normalmente — cada um lê no seu idioma
+1. Join a room and pick your language
+2. Share the link with whoever you want
+3. Chat normally — everyone reads in their own language
 
 ---
 
 ## Screenshots
 
 <p align="center">
-  <img src="screenshot-landing.png" width="30%" alt="Landing page com i18n" />
+  <img src="screenshot-landing.png" width="30%" alt="Landing page with i18n" />
   &nbsp;
-  <img src="screenshot-room.png"    width="30%" alt="Criando uma sala" />
+  <img src="screenshot-room.png"    width="30%" alt="Creating a room" />
   &nbsp;
-  <img src="screenshot-chat.png"    width="30%" alt="Chat com upload de arquivo" />
+  <img src="screenshot-chat.png"    width="30%" alt="Chat with file upload" />
 </p>
 
 ---
 
 ## Features
 
-| | Recurso |
+| | Feature |
 |---|---|
-| 🌍 | **15 idiomas** — PT, EN, ES, FR, DE, ZH, JA, AR, RU, HI, KO, IT, TR, PL, TH |
-| 🏳️ | **Interface traduzida** — toda a UI muda de idioma ao clicar na bandeira, dentro ou fora da sala |
-| 🖼️ | **Imagens, arquivos e áudio** — preview antes de enviar, regravar áudio se não ficar bom |
-| 🎙️ | **Transcrição de áudio** — voz transcrita automaticamente via Whisper antes de traduzir |
-| 🔒 | **Salas com senha** — proteja conversas privadas (senha via `sessionStorage`, não no URL) |
-| ⚡ | **Cache de tradução** — LRU cache evita chamadas duplicadas à API |
-| 🛡️ | **Rate limiting** — 20 uploads/min e 60 mensagens/min protegem a conta e o servidor |
-| 🌐 | **Texto original** — clique em qualquer mensagem traduzida para ver o original |
-| 🔔 | **Notificações** — som + browser notification fora da aba, com badge no título |
-| 📱 | **Mobile-first** — funciona no iPhone/Android, input não some atrás do teclado |
-| ♿ | **Acessibilidade** — navegação por teclado, `role=log` com live regions, labels i18n em todos os ícones |
-| ♻️ | **Salas efêmeras** — somem automaticamente quando todos saem |
-| 🔇 | **Zero persistência** — nada é salvo, nada é logado |
+| 🌍 | **15 languages** — PT, EN, ES, FR, DE, ZH, JA, AR, RU, HI, KO, IT, TR, PL, TH |
+| 🏳️ | **Translated UI** — the entire interface switches language when you click a flag, inside or outside a room |
+| 🖼️ | **Images, files & audio** — preview before sending, re-record audio if it didn't come out right |
+| 🎙️ | **Audio transcription** — voice automatically transcribed via Whisper before translating |
+| 🔒 | **Password-protected rooms** — keep private conversations private (password stored in `sessionStorage`, never in the URL) |
+| ⚡ | **Translation cache** — LRU cache avoids duplicate API calls |
+| 🛡️ | **Rate limiting** — 20 uploads/min and 60 messages/min protect your account and the server |
+| 🌐 | **Original text** — click any translated message to see the original |
+| 🔔 | **Notifications** — sound + browser notification when the tab is in the background, plus title badge |
+| 📱 | **Mobile-first** — works on iPhone/Android, input doesn't hide behind the keyboard |
+| ♿ | **Accessibility** — keyboard navigation, `role=log` with live regions, i18n labels on every icon |
+| ♻️ | **Ephemeral rooms** — automatically deleted when everyone leaves |
+| 🔇 | **Zero persistence** — nothing is saved, nothing is logged |
 
 ---
 
 ## Stack
 
-| Camada | Tech |
+| Layer | Tech |
 |---|---|
 | Backend | Node.js · Express · Socket.io |
-| Tradução | OpenAI GPT-4.1 Nano |
-| Transcrição | OpenAI Whisper |
-| Frontend | Vanilla HTML · CSS · JS (sem frameworks) |
+| Translation | OpenAI GPT-4.1 Nano |
+| Transcription | OpenAI Whisper |
+| Frontend | Vanilla HTML · CSS · JS (no frameworks) |
 | Deploy | Docker · Traefik · Portainer |
-| Banco de dados | Nenhum — tudo in-memory |
+| Database | None — everything in-memory |
 
 ---
 
-## Rodando localmente
+## Running locally
 
 ```bash
 # 1. Clone
 git clone https://github.com/alijaouharifilho/babelchat.git
 cd babelchat
 
-# 2. Instale as dependências
+# 2. Install dependencies
 npm install
 
-# 3. Configure a chave da OpenAI
-echo "OPENAI_API_KEY=sua-chave-aqui" > .env
+# 3. Set your OpenAI key
+echo "OPENAI_API_KEY=your-key-here" > .env
 
-# 4. Rode
+# 4. Run
 npm start
 # → http://localhost:3000
 ```
 
 ---
 
-## Deploy com Docker
+## Deploy with Docker
 
 ```bash
 # Build
 docker build -t babelchat .
 
 # Run
-docker run -d -p 3000:3000 -e OPENAI_API_KEY=sua-chave babelchat
+docker run -d -p 3000:3000 -e OPENAI_API_KEY=your-key babelchat
 ```
 
-Um `docker-compose.yml` pronto para **Portainer + Traefik** com HTTPS está incluído no repositório.
+A `docker-compose.yml` ready for **Portainer + Traefik** with HTTPS is included in the repository.
 
 ---
 
-## Custo estimado
+## Estimated cost
 
-GPT-4.1 Nano custa **$0.10/1M tokens input** e **$0.40/1M tokens output**.
+GPT-4.1 Nano costs **$0.10/1M input tokens** and **$0.40/1M output tokens**.
 
-> Uma mensagem (~50 palavras) traduzida para 5 idiomas custa aproximadamente **$0.00015**.
-> Isso dá ~**6.600 mensagens multi-idioma por dólar**.
+> A message (~50 words) translated into 5 languages costs approximately **$0.00015**.
+> That's ~**6,600 multi-language messages per dollar**.
 
 ---
 
-## Estrutura
+## Project structure
 
 ```
 babelchat/
-├── server.js          # Express + Socket.io + lógica das salas
+├── server.js          # Express + Socket.io + room logic
 ├── translator.js      # OpenAI wrapper + LRU cache
-├── docker-compose.yml # Stack de produção (Portainer + Traefik)
+├── docker-compose.yml # Production stack (Portainer + Traefik)
 ├── public/
 │   ├── index.html     # Landing page
 │   ├── chat.html      # Chat
 │   ├── style.css      # Dark theme
-│   ├── i18n.js        # Traduções da UI (15 idiomas × 69 chaves)
-│   ├── app.js         # Lógica da landing + typewriter animation
-│   └── chat.js        # Lógica do chat (Socket.io, upload, áudio)
+│   ├── i18n.js        # UI translations (15 languages × 69 keys)
+│   ├── app.js         # Landing logic + typewriter animation
+│   └── chat.js        # Chat logic (Socket.io, upload, audio)
 └── package.json
 ```
 
@@ -145,25 +147,25 @@ babelchat/
 
 ## Roadmap
 
-- [x] Tradução em tempo real (15 idiomas)
-- [x] Interface multilíngue com i18n completo
-- [x] Upload de imagens, arquivos e áudio com Whisper
-- [x] Deploy público — [babelchat.com.br](https://babelchat.com.br)
-- [x] Layout mobile responsivo (iOS Safari)
-- [x] Rate limiting (uploads + mensagens)
-- [x] Preview antes de enviar arquivos / regravar áudios
-- [x] Acessibilidade — navegação por teclado, ARIA completo
-- [ ] Agrupamento de mensagens consecutivas do mesmo autor
-- [ ] Reações com emoji nas mensagens
-- [ ] Salas permanentes com Redis
-- [ ] PWA / instalável no celular
+- [x] Real-time translation (15 languages)
+- [x] Multilingual UI with full i18n
+- [x] Image, file and audio upload with Whisper
+- [x] Public deployment — [babelchat.com.br](https://babelchat.com.br)
+- [x] Responsive mobile layout (iOS Safari)
+- [x] Rate limiting (uploads + messages)
+- [x] Preview before sending files / re-record audio
+- [x] Accessibility — keyboard navigation, full ARIA
+- [ ] Group consecutive messages from the same author
+- [ ] Emoji reactions on messages
+- [ ] Persistent rooms with Redis
+- [ ] PWA / installable on mobile
 
 ---
 
 <div align="center">
 
-Feito com ☕ e IA.
+Made with ☕ and AI.
 
-[![Live Demo](https://img.shields.io/badge/▶%20Experimente%20agora-babelchat.com.br-7c6aff?style=for-the-badge&logo=googlechrome&logoColor=white)](https://babelchat.com.br)
+[![Live Demo](https://img.shields.io/badge/▶%20Try%20it%20now-babelchat.com.br-7c6aff?style=for-the-badge&logo=googlechrome&logoColor=white)](https://babelchat.com.br)
 
 </div>
