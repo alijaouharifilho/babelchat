@@ -274,10 +274,82 @@ const fileInput = document.getElementById('file-input');
 const btnAttach = document.getElementById('btn-attach');
 
 btnAttach.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) uploadFile(fileInput.files[0]);
-  fileInput.value = '';
+fileInput.addEventListener('change', async () => {
+  if (fileInput.files.length) {
+    const file = fileInput.files[0];
+    fileInput.value = ''; // clear so re-selecting the same file still fires change
+    if (await confirmUpload(file)) uploadFile(file);
+  } else {
+    fileInput.value = '';
+  }
 });
+
+// ─── Upload preview modal ──────────────────────────────
+// Shows the user what they're about to send before actually uploading,
+// with Cancel and Send buttons. Returns a Promise<boolean>.
+const uploadModal   = document.getElementById('upload-modal');
+const uploadBody    = document.getElementById('upload-preview-body');
+const btnUploadOk   = document.getElementById('btn-upload-confirm');
+const btnUploadNo   = document.getElementById('btn-upload-cancel');
+
+function humanSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function confirmUpload(file) {
+  // Build preview content based on file type.
+  uploadBody.innerHTML = '';
+  const meta = document.createElement('div');
+  meta.className = 'upload-preview-meta';
+  meta.innerHTML = `
+    <div class="upload-preview-name"></div>
+    <div class="upload-preview-size">${humanSize(file.size)}</div>
+  `;
+  meta.querySelector('.upload-preview-name').textContent = file.name;
+
+  if (file.type.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.className = 'upload-preview-img';
+    img.alt = file.name;
+    img.src = URL.createObjectURL(file);
+    img.onload = () => URL.revokeObjectURL(img.src);
+    uploadBody.appendChild(img);
+  } else {
+    const icon = document.createElement('div');
+    icon.className = 'upload-preview-icon';
+    icon.textContent = file.type.startsWith('audio/') ? '🎵' : '📄';
+    uploadBody.appendChild(icon);
+  }
+  uploadBody.appendChild(meta);
+
+  uploadModal.classList.remove('hidden');
+  btnUploadOk.focus();
+
+  return new Promise(resolve => {
+    function cleanup(result) {
+      uploadModal.classList.add('hidden');
+      btnUploadOk.removeEventListener('click', onOk);
+      btnUploadNo.removeEventListener('click', onNo);
+      document.removeEventListener('keydown', onKey);
+      uploadModal.removeEventListener('click', onBackdrop);
+      resolve(result);
+    }
+    function onOk()       { cleanup(true);  }
+    function onNo()       { cleanup(false); }
+    function onKey(e)     {
+      if (e.key === 'Escape') cleanup(false);
+      if (e.key === 'Enter')  cleanup(true);
+    }
+    function onBackdrop(e) { if (e.target === uploadModal) cleanup(false); }
+
+    btnUploadOk.addEventListener('click', onOk);
+    btnUploadNo.addEventListener('click', onNo);
+    document.addEventListener('keydown', onKey);
+    uploadModal.addEventListener('click', onBackdrop);
+  });
+}
 
 async function uploadFile(file) {
   if (file.size > 10 * 1024 * 1024) {
@@ -346,11 +418,13 @@ chatBody.addEventListener('dragleave', e => {
 
 chatBody.addEventListener('dragover', e => e.preventDefault());
 
-chatBody.addEventListener('drop', e => {
+chatBody.addEventListener('drop', async e => {
   e.preventDefault();
   dragCounter = 0;
   dropOverlay.classList.add('hidden');
-  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+  if (!e.dataTransfer.files.length) return;
+  const file = e.dataTransfer.files[0];
+  if (await confirmUpload(file)) uploadFile(file);
 });
 
 // ═══════════════════════════════════════════════════════

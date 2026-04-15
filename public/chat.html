@@ -135,6 +135,19 @@
 
   </div>
 
+  <!-- Upload preview modal. Shown before a file is sent so the user can
+       confirm / cancel / replace. -->
+  <div class="modal-backdrop hidden" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <div class="modal">
+      <h3 class="modal-title" id="upload-modal-title" data-i18n="chat.upload_preview_title">Enviar arquivo</h3>
+      <div class="upload-preview-body" id="upload-preview-body"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-upload-cancel" type="button" data-i18n="chat.cancel">Cancelar</button>
+        <button class="btn-primary" id="btn-upload-confirm" type="button" data-i18n="chat.send_title">Enviar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="i18n.js"></script>
   <script src="chat.js"></script>
