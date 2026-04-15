@@ -21,13 +21,17 @@ const params    = new URLSearchParams(window.location.search);
 const roomId    = params.get('room');
 const myName    = params.get('name');
 const myLang    = params.get('lang');
-const roomPwd   = params.get('pwd') || '';
 const isCreator = params.get('creator') === '1';
+
+// Password is passed via sessionStorage (set by app.js) to keep it out of
+// URLs, browser history and referer headers. Consume and clear immediately.
+const roomPwd = sessionStorage.getItem('babelchat-room-pwd') || '';
+sessionStorage.removeItem('babelchat-room-pwd');
 
 if (!roomId || !myName || !myLang) window.location.href = '/';
 
-// Clean URL
-if (roomPwd || isCreator) {
+// Clean URL (strip creator flag)
+if (isCreator) {
   const cleanParams = new URLSearchParams({ room: roomId, name: myName, lang: myLang });
   history.replaceState(null, '', `chat.html?${cleanParams.toString()}`);
 }
@@ -35,6 +39,96 @@ if (roomPwd || isCreator) {
 // ─── Apply UI language ──────────────────────────────────
 const uiLang = localStorage.getItem('babelchat-ui-lang') || myLang;
 I18n.applyLanguage(uiLang);
+
+// ─── UI language switcher (in-chat) ─────────────────────
+// Users used to be stuck with whatever language they picked on the landing
+// page; if they wanted the UI in a different language they had to leave
+// the room. This dropdown lets them switch in place.
+(function initUiLangSwitcher() {
+  const btn  = document.getElementById('btn-ui-lang');
+  const menu = document.getElementById('ui-lang-menu');
+  if (!btn || !menu) return;
+
+  // Build menu items in the same order as the language code list.
+  Object.entries(LANGUAGES).forEach(([code, info]) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'ui-lang-item';
+    item.setAttribute('role', 'menuitem');
+    // Only the currently-focused item gets tabindex=0 — per ARIA menu
+    // pattern, arrow keys move focus inside the menu.
+    item.tabIndex = -1;
+    item.dataset.code = code;
+    // Flag is decorative — the language name carries the meaning for AT.
+    item.innerHTML = `<span class="ui-lang-flag" aria-hidden="true">${info.flag}</span><span class="ui-lang-name">${info.name}</span>`;
+    item.addEventListener('click', () => {
+      I18n.applyLanguage(code);
+      markActive(code);
+      closeMenu();
+      btn.focus();
+    });
+    menu.appendChild(item);
+  });
+
+  function markActive(code) {
+    menu.querySelectorAll('.ui-lang-item').forEach(el => {
+      const isActive = el.dataset.code === code;
+      el.classList.toggle('active', isActive);
+      if (isActive) el.setAttribute('aria-current', 'true');
+      else el.removeAttribute('aria-current');
+    });
+  }
+  markActive(I18n.getCurrentLang());
+
+  function openMenu()  {
+    menu.classList.remove('hidden');
+    btn.setAttribute('aria-expanded', 'true');
+    // Focus lands on the active item (or the first one) so keyboard users
+    // can arrow-navigate right away.
+    const active = menu.querySelector('.ui-lang-item.active') || menu.querySelector('.ui-lang-item');
+    if (active) active.focus();
+  }
+  function closeMenu() { menu.classList.add('hidden');    btn.setAttribute('aria-expanded', 'false'); }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    menu.classList.contains('hidden') ? openMenu() : closeMenu();
+  });
+
+  // Arrow-key navigation inside the menu (ARIA menu pattern).
+  menu.addEventListener('keydown', e => {
+    const items = Array.from(menu.querySelectorAll('.ui-lang-item'));
+    const idx = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      items[(idx + 1) % items.length]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      items[(idx - 1 + items.length) % items.length]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      items[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      items[items.length - 1]?.focus();
+    } else if (e.key === 'Tab') {
+      // Tab moves focus out of the menu — close it so it doesn't linger.
+      closeMenu();
+    }
+  });
+
+  // Click outside closes the menu.
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target) && e.target !== btn) closeMenu();
+  });
+  // Esc closes too; return focus to the trigger.
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !menu.classList.contains('hidden')) {
+      closeMenu();
+      btn.focus();
+    }
+  });
+})();
 
 // ─── iOS Safari: fix keyboard dismiss leaving input stuck ─
 // visualViewport fires reliably when soft keyboard shows/hides;
@@ -125,7 +219,12 @@ socket.on('disconnect', () => {
 });
 socket.on('reconnect', () => { connBar.classList.add('hidden'); });
 
-socket.on('error-msg', ({ message }) => {
+socket.on('error-msg', ({ message, fatal }) => {
+  if (fatal === false) {
+    // Transient error (e.g. rate limit) — surface inline, keep the user in the room.
+    addSystemMsg(message);
+    return;
+  }
   alert(message);
   window.location.href = `/?room=${encodeURIComponent(roomId)}`;
 });
@@ -139,6 +238,9 @@ socket.on('room-update', ({ type, name, users }) => {
   if (type === 'joined') {
     addSystemMsg(name === myName ? I18n.t('chat.you_joined') : I18n.t('chat.user_joined', { name }));
   } else if (type === 'left') {
+    // Clear any stale "typing" state for the user who just left, otherwise
+    // the indicator sticks around forever.
+    if (typingUsers.delete(name)) renderTyping();
     addSystemMsg(I18n.t('chat.user_left', { name }));
   }
 });
@@ -212,10 +314,197 @@ const fileInput = document.getElementById('file-input');
 const btnAttach = document.getElementById('btn-attach');
 
 btnAttach.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) uploadFile(fileInput.files[0]);
-  fileInput.value = '';
+fileInput.addEventListener('change', async () => {
+  if (fileInput.files.length) {
+    const file = fileInput.files[0];
+    fileInput.value = ''; // clear so re-selecting the same file still fires change
+    if (await confirmUpload(file)) uploadFile(file);
+  } else {
+    fileInput.value = '';
+  }
 });
+
+// ─── Upload preview modal ──────────────────────────────
+// Shows the user what they're about to send before actually uploading,
+// with Cancel and Send buttons. Returns a Promise<boolean>.
+const uploadModal   = document.getElementById('upload-modal');
+const uploadBody    = document.getElementById('upload-preview-body');
+const btnUploadOk   = document.getElementById('btn-upload-confirm');
+const btnUploadNo   = document.getElementById('btn-upload-cancel');
+
+function humanSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function setModalTitle(key) {
+  const el = document.getElementById('upload-modal-title');
+  if (el) el.textContent = I18n.t(key);
+}
+
+// Keeps focus inside the modal and returns it to the element that had
+// focus before the modal opened. Call on open; returns a cleanup fn.
+function trapModalFocus(modalEl) {
+  const previouslyFocused = document.activeElement;
+  function onKey(e) {
+    if (e.key !== 'Tab') return;
+    const focusable = modalEl.querySelectorAll(
+      'button:not([disabled]):not(.hidden), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+  modalEl.addEventListener('keydown', onKey);
+  return function release() {
+    modalEl.removeEventListener('keydown', onKey);
+    if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+      previouslyFocused.focus();
+    }
+  };
+}
+
+function confirmUpload(file) {
+  setModalTitle('chat.upload_preview_title');
+  // Build preview content based on file type.
+  uploadBody.innerHTML = '';
+  const meta = document.createElement('div');
+  meta.className = 'upload-preview-meta';
+  meta.innerHTML = `
+    <div class="upload-preview-name"></div>
+    <div class="upload-preview-size">${humanSize(file.size)}</div>
+  `;
+  meta.querySelector('.upload-preview-name').textContent = file.name;
+
+  if (file.type.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.className = 'upload-preview-img';
+    img.alt = file.name;
+    img.src = URL.createObjectURL(file);
+    img.onload = () => URL.revokeObjectURL(img.src);
+    uploadBody.appendChild(img);
+  } else {
+    const icon = document.createElement('div');
+    icon.className = 'upload-preview-icon';
+    icon.textContent = file.type.startsWith('audio/') ? '🎵' : '📄';
+    uploadBody.appendChild(icon);
+  }
+  uploadBody.appendChild(meta);
+
+  uploadModal.classList.remove('hidden');
+  btnUploadOk.focus();
+  const releaseFocus = trapModalFocus(uploadModal);
+
+  return new Promise(resolve => {
+    function cleanup(result) {
+      uploadModal.classList.add('hidden');
+      btnUploadOk.removeEventListener('click', onOk);
+      btnUploadNo.removeEventListener('click', onNo);
+      document.removeEventListener('keydown', onKey);
+      uploadModal.removeEventListener('click', onBackdrop);
+      releaseFocus();
+      resolve(result);
+    }
+    function onOk()       { cleanup(true);  }
+    function onNo()       { cleanup(false); }
+    function onKey(e)     {
+      if (e.key === 'Escape') cleanup(false);
+      if (e.key === 'Enter')  cleanup(true);
+    }
+    function onBackdrop(e) { if (e.target === uploadModal) cleanup(false); }
+
+    btnUploadOk.addEventListener('click', onOk);
+    btnUploadNo.addEventListener('click', onNo);
+    document.addEventListener('keydown', onKey);
+    uploadModal.addEventListener('click', onBackdrop);
+  });
+}
+
+// Audio-specific preview: playback + Send / Re-record / Discard.
+// Reuses the same modal shell but swaps the body and the action buttons.
+// Resolves to 'send' | 'redo' | 'discard'.
+function confirmAudioUpload(file) {
+  setModalTitle('chat.audio_preview_title');
+  uploadBody.innerHTML = '';
+
+  const audio = document.createElement('audio');
+  audio.className = 'audio-preview-player';
+  audio.controls = true;
+  audio.src = URL.createObjectURL(file);
+  audio.addEventListener('ended', () => URL.revokeObjectURL(audio.src), { once: true });
+  uploadBody.appendChild(audio);
+
+  const meta = document.createElement('div');
+  meta.className = 'upload-preview-meta';
+  meta.innerHTML = `<div class="upload-preview-size">${humanSize(file.size)}</div>`;
+  uploadBody.appendChild(meta);
+
+  // Swap the two default buttons for three (re-record / discard / send).
+  // We don't touch the DOM of the default buttons — we hide them and
+  // inject siblings, then restore on cleanup.
+  const actions = btnUploadOk.parentElement;
+  btnUploadOk.classList.add('hidden');
+  btnUploadNo.classList.add('hidden');
+
+  const btnRedo = document.createElement('button');
+  btnRedo.type = 'button';
+  btnRedo.className = 'btn-secondary';
+  btnRedo.textContent = I18n.t('chat.audio_rerecord');
+
+  const btnDiscard = document.createElement('button');
+  btnDiscard.type = 'button';
+  btnDiscard.className = 'btn-secondary';
+  btnDiscard.textContent = I18n.t('chat.audio_discard');
+
+  const btnSend = document.createElement('button');
+  btnSend.type = 'button';
+  btnSend.className = 'btn-primary';
+  btnSend.textContent = I18n.t('chat.send_title');
+
+  actions.appendChild(btnRedo);
+  actions.appendChild(btnDiscard);
+  actions.appendChild(btnSend);
+
+  uploadModal.classList.remove('hidden');
+  btnSend.focus();
+  const releaseFocus = trapModalFocus(uploadModal);
+
+  return new Promise(resolve => {
+    function cleanup(result) {
+      audio.pause();
+      URL.revokeObjectURL(audio.src);
+      uploadModal.classList.add('hidden');
+      actions.removeChild(btnRedo);
+      actions.removeChild(btnDiscard);
+      actions.removeChild(btnSend);
+      btnUploadOk.classList.remove('hidden');
+      btnUploadNo.classList.remove('hidden');
+      document.removeEventListener('keydown', onKey);
+      uploadModal.removeEventListener('click', onBackdrop);
+      releaseFocus();
+      resolve(result);
+    }
+    function onKey(e)      {
+      if (e.key === 'Escape') cleanup('discard');
+      if (e.key === 'Enter')  cleanup('send');
+    }
+    function onBackdrop(e) { if (e.target === uploadModal) cleanup('discard'); }
+
+    btnSend.addEventListener('click', () => cleanup('send'));
+    btnRedo.addEventListener('click', () => cleanup('redo'));
+    btnDiscard.addEventListener('click', () => cleanup('discard'));
+    document.addEventListener('keydown', onKey);
+    uploadModal.addEventListener('click', onBackdrop);
+  });
+}
 
 async function uploadFile(file) {
   if (file.size > 10 * 1024 * 1024) {
@@ -228,8 +517,7 @@ async function uploadFile(file) {
   const form = new FormData();
   form.append('file', file);
   form.append('roomId', roomId);
-  form.append('userName', myName);
-  form.append('userLang', myLang);
+  form.append('socketId', socket.id);
 
   try {
     const res = await fetch('/api/upload', { method: 'POST', body: form });
@@ -285,11 +573,13 @@ chatBody.addEventListener('dragleave', e => {
 
 chatBody.addEventListener('dragover', e => e.preventDefault());
 
-chatBody.addEventListener('drop', e => {
+chatBody.addEventListener('drop', async e => {
   e.preventDefault();
   dragCounter = 0;
   dropOverlay.classList.add('hidden');
-  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+  if (!e.dataTransfer.files.length) return;
+  const file = e.dataTransfer.files[0];
+  if (await confirmUpload(file)) uploadFile(file);
 });
 
 // ═══════════════════════════════════════════════════════
@@ -316,8 +606,9 @@ btnMic.addEventListener('click', async () => {
 btnRecCancel.addEventListener('click', () => stopRecording(false)); // discard
 
 async function startRecording() {
+  let stream = null;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMimeType() });
     audioChunks = [];
 
@@ -332,6 +623,11 @@ async function startRecording() {
     recTimerEl.textContent = '0:00';
     recInterval = setInterval(updateRecTimer, 1000);
   } catch (err) {
+    // If getUserMedia succeeded but something after it threw (e.g. unsupported
+    // mimeType on MediaRecorder), release the mic instead of leaking the
+    // stream and leaving the browser recording indicator on.
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    mediaRecorder = null;
     addSystemMsg(I18n.t('chat.mic_error'));
   }
 }
@@ -352,16 +648,22 @@ function stopRecording(shouldSend) {
   audioChunks = [];
 
   // onstop fires after all pending ondataavailable events
-  recorder.onstop = () => {
+  recorder.onstop = async () => {
     // Release microphone
     recorder.stream.getTracks().forEach(t => t.stop());
 
-    if (shouldSend && chunks.length > 0) {
-      const ext = recorder.mimeType.includes('webm') ? 'webm' : 'mp4';
-      const blob = new Blob(chunks, { type: recorder.mimeType });
-      const file = new File([blob], `audio.${ext}`, { type: recorder.mimeType });
-      uploadFile(file);
-    }
+    if (!shouldSend || chunks.length === 0) return;
+
+    const ext = recorder.mimeType.includes('webm') ? 'webm' : 'mp4';
+    const blob = new Blob(chunks, { type: recorder.mimeType });
+    const file = new File([blob], `audio.${ext}`, { type: recorder.mimeType });
+
+    // Review step: let the user listen back, re-record, or discard before
+    // the clip is shipped off to Whisper.
+    const action = await confirmAudioUpload(file);
+    if (action === 'send')     uploadFile(file);
+    else if (action === 'redo') await startRecording();
+    // 'discard' → nothing to do.
   };
 
   recorder.stop(); // triggers remaining ondataavailable, then onstop
@@ -394,24 +696,68 @@ function removeWelcome() {
   if (w) w.remove();
 }
 
+// "Near the bottom" = within 80px. Keeps auto-scroll working even if the
+// user is a few pixels off, but stops hijacking their scroll when they're
+// reading older messages.
+function isNearBottom(area) {
+  return area.scrollHeight - area.scrollTop - area.clientHeight < 80;
+}
+
+// ─── Jump-to-bottom pill ────────────────────────────────
+const jumpBtn = document.getElementById('jump-to-bottom');
+const jumpCountEl = document.getElementById('jump-count');
+let jumpCount = 0;
+
+function bumpJumpPill() {
+  jumpCount++;
+  jumpCountEl.textContent = jumpCount;
+  jumpBtn.classList.remove('hidden');
+}
+
+function clearJumpPill() {
+  jumpCount = 0;
+  jumpBtn.classList.add('hidden');
+}
+
+jumpBtn.addEventListener('click', () => {
+  const area = document.getElementById('messages-area');
+  area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
+  clearJumpPill();
+});
+
+// If the user scrolls back to the bottom on their own, hide the pill.
+document.getElementById('messages-area').addEventListener('scroll', () => {
+  if (jumpCount > 0 && isNearBottom(document.getElementById('messages-area'))) {
+    clearJumpPill();
+  }
+});
+
 function addMessage(msg) {
   const { type, from, fromLanguage, text, original, isOwn, timestamp, imageUrl, audioUrl, fileUrl, fileName, fileSize } = msg;
   const area = document.getElementById('messages-area');
+  const wasAtBottom = isNearBottom(area);
   const langInfo = LANGUAGES[fromLanguage];
   const flag = langInfo?.flag || '🌐';
   const langName = langInfo?.name || fromLanguage;
 
   const group = document.createElement('div');
   group.className = 'msg-group';
+  // Each message is its own region inside the role="log" so AT users can
+  // navigate them one at a time. isOwn messages don't need a sender label
+  // in the accessible name (the user knows they sent it).
+  group.setAttribute('role', 'article');
+  group.setAttribute('aria-label', isOwn ? I18n.t('chat.you_badge') : `${from} (${langName})`);
 
   const row = document.createElement('div');
   row.className = `msg-row${isOwn ? ' own' : ''}`;
 
-  // Avatar
+  // Avatar — the flag is decorative; the accessible name on the group
+  // already exposes the sender and their language.
   const avatar = document.createElement('div');
   avatar.className = 'msg-avatar';
   avatar.textContent = flag;
   avatar.title = langName;
+  avatar.setAttribute('aria-hidden', 'true');
 
   // Bubble
   const bubble = document.createElement('div');
@@ -420,6 +766,9 @@ function addMessage(msg) {
   if (!isOwn) {
     const sender = document.createElement('div');
     sender.className = 'msg-sender';
+    // Flag glyph is decorative here too; the article's aria-label already
+    // carries the sender name + language for AT.
+    sender.setAttribute('aria-hidden', 'true');
     sender.textContent = `${flag} ${from}`;
     bubble.appendChild(sender);
   }
@@ -434,7 +783,12 @@ function addMessage(msg) {
     img.className = 'msg-image';
     img.src = imageUrl;
     img.alt = I18n.t('chat.image_alt');
-    img.onload = () => { imgWrap.textContent = ''; imgWrap.appendChild(img); area.scrollTop = area.scrollHeight; };
+    img.onload = () => {
+      imgWrap.textContent = '';
+      imgWrap.appendChild(img);
+      // Same rule: don't yank the user's scroll if they're reading older messages.
+      if (isNearBottom(area) || isOwn) area.scrollTop = area.scrollHeight;
+    };
     img.onerror = () => { imgWrap.textContent = I18n.t('chat.image_load_error'); };
     img.addEventListener('click', () => window.open(imageUrl, '_blank'));
     bubble.appendChild(imgWrap);
@@ -491,21 +845,44 @@ function addMessage(msg) {
 
   // ─── "Translated from" indicator ──────────────────
   if (original) {
-    const orig = document.createElement('div');
+    // Stable id so aria-controls can point the button at the panel,
+    // letting screen readers announce the expanded state properly.
+    const panelId = 'orig-' + Math.random().toString(36).slice(2, 9);
+
+    const orig = document.createElement('button');
+    orig.type = 'button';
     orig.className = 'msg-original';
+    orig.setAttribute('aria-expanded', 'false');
+    orig.setAttribute('aria-controls', panelId);
 
     const label = document.createElement('span');
     label.className = 'msg-original-label';
     label.textContent = I18n.t('chat.translated_from', { language: langName });
     orig.appendChild(label);
 
-    const origText = document.createElement('span');
-    origText.className = 'msg-original-text';
-    origText.textContent = original;
-    orig.appendChild(origText);
+    // Visible chevron — rotates when expanded via CSS.
+    const caret = document.createElement('span');
+    caret.className = 'msg-original-caret';
+    caret.textContent = '▾';
+    caret.setAttribute('aria-hidden', 'true');
+    orig.appendChild(caret);
 
-    orig.addEventListener('click', () => orig.classList.toggle('expanded'));
+    // Original text panel lives as a sibling of the button so the button's
+    // accessible name stays "traduzido do X" — otherwise SR users hear the
+    // full translated text as part of the control's name.
+    const origText = document.createElement('div');
+    origText.className = 'msg-original-text';
+    origText.id = panelId;
+    origText.hidden = true;
+    origText.textContent = original;
+
+    orig.addEventListener('click', () => {
+      const expanded = orig.classList.toggle('expanded');
+      orig.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      origText.hidden = !expanded;
+    });
     bubble.appendChild(orig);
+    bubble.appendChild(origText);
   }
 
   // Timestamp
@@ -519,14 +896,26 @@ function addMessage(msg) {
   group.appendChild(row);
   area.appendChild(group);
 
-  area.scrollTop = area.scrollHeight;
+  // Only auto-scroll if the user was already at the bottom, OR they just
+  // sent the message themselves (their own message should always appear).
+  if (wasAtBottom || isOwn) {
+    area.scrollTop = area.scrollHeight;
+  } else if (!isOwn) {
+    // User is reading older messages — bump the jump pill instead of
+    // silently appending below the fold.
+    bumpJumpPill();
+  }
 }
 
 function addSystemMsg(text) {
   const area = document.getElementById('messages-area');
   const el = document.createElement('div');
   el.className = 'sys-msg';
-  el.innerHTML = `<span>${text}</span>`;
+  // role=status ensures the text is announced even though the parent log's
+  // aria-relevant is set to "additions" only.
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<span></span>`;
+  el.firstChild.textContent = text;
   area.appendChild(el);
   area.scrollTop = area.scrollHeight;
 }
@@ -546,15 +935,31 @@ function updateUserList(users) {
   list.innerHTML = '';
   users.forEach(user => {
     const isMe = user.name === myName && user.language === myLang;
+    const langInfo = LANGUAGES[user.language];
     const li = document.createElement('li');
     li.className = `user-item${isMe ? ' is-me' : ''}`;
-    const langInfo = LANGUAGES[user.language];
-    li.innerHTML = `
-      <span class="user-flag">${langInfo?.flag || '🌐'}</span>
-      <span class="user-name">${user.name}</span>
-      ${isMe ? `<span class="user-you">${I18n.t('chat.you_badge')}</span>` : ''}
-    `;
     li.title = langInfo?.name || user.language;
+
+    const flag = document.createElement('span');
+    flag.className = 'user-flag';
+    flag.textContent = langInfo?.flag || '🌐';
+    flag.setAttribute('aria-hidden', 'true');
+    li.appendChild(flag);
+
+    // textContent, not innerHTML — user.name is sanitized server-side but
+    // we still treat it as untrusted input on render for defense in depth.
+    const name = document.createElement('span');
+    name.className = 'user-name';
+    name.textContent = user.name;
+    li.appendChild(name);
+
+    if (isMe) {
+      const you = document.createElement('span');
+      you.className = 'user-you';
+      you.textContent = I18n.t('chat.you_badge');
+      li.appendChild(you);
+    }
+
     list.appendChild(li);
   });
 }

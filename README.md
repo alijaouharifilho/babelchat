@@ -12,6 +12,8 @@ Talk to anyone, in any language — no barriers, zero configuration.
 [![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4.1%20Nano-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com)
 
+🌐 **Read this in:** [English](README.md) · [Português](README.pt.md)
+
 ![BabelChat Demo](demo.gif)
 
 </div>
@@ -53,14 +55,16 @@ Talk to anyone, in any language — no barriers, zero configuration.
 | | Feature |
 |---|---|
 | 🌍 | **15 languages** — PT, EN, ES, FR, DE, ZH, JA, AR, RU, HI, KO, IT, TR, PL, TH |
-| 🏳️ | **Translated UI** — the entire interface switches language when you click a flag |
-| 🖼️ | **Images, files & audio** — send media directly in the chat |
+| 🏳️ | **Translated UI** — the entire interface switches language when you click a flag, inside or outside a room |
+| 🖼️ | **Images, files & audio** — preview before sending, re-record audio if it didn't come out right |
 | 🎙️ | **Audio transcription** — voice automatically transcribed via Whisper before translating |
-| 🔒 | **Password-protected rooms** — keep private conversations private |
+| 🔒 | **Password-protected rooms** — keep private conversations private (password stored in `sessionStorage`, never in the URL) |
 | ⚡ | **Translation cache** — LRU cache avoids duplicate API calls |
-| 🌐 | **Original text** — click any message to see the original |
-| 🔔 | **Notifications** — sound + browser notification when the tab is in the background |
+| 🛡️ | **Rate limiting** — 20 uploads/min and 60 messages/min protect your account and the server |
+| 🌐 | **Original text** — click any translated message to see the original |
+| 🔔 | **Notifications** — sound + browser notification when the tab is in the background, plus title badge |
 | 📱 | **Mobile-first** — works on iPhone/Android, input doesn't hide behind the keyboard |
+| ♿ | **Accessibility** — keyboard navigation, `role=log` with live regions, i18n labels on every icon |
 | ♻️ | **Ephemeral rooms** — automatically deleted when everyone leaves |
 | 🔇 | **Zero persistence** — nothing is saved, nothing is logged |
 
@@ -133,7 +137,7 @@ babelchat/
 │   ├── index.html     # Landing page
 │   ├── chat.html      # Chat
 │   ├── style.css      # Dark theme
-│   ├── i18n.js        # UI translations (15 languages × 62 keys)
+│   ├── i18n.js        # UI translations (15 languages × 69 keys)
 │   ├── app.js         # Landing logic + typewriter animation
 │   └── chat.js        # Chat logic (Socket.io, upload, audio)
 └── package.json
@@ -148,10 +152,13 @@ babelchat/
 - [x] Image, file and audio upload with Whisper
 - [x] Public deployment — [babelchat.com.br](https://babelchat.com.br)
 - [x] Responsive mobile layout (iOS Safari)
+- [x] Rate limiting (uploads + messages)
+- [x] Preview before sending files / re-record audio
+- [x] Accessibility — keyboard navigation, full ARIA
+- [ ] Group consecutive messages from the same author
 - [ ] Emoji reactions on messages
 - [ ] Persistent rooms with Redis
 - [ ] PWA / installable on mobile
-- [ ] Rate limiting per IP
 
 ---
 

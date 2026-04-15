@@ -10,26 +10,32 @@
   <div class="chat-layout">
 
     <!-- Connection banner -->
-    <div class="connection-bar hidden" id="connection-bar">
+    <div class="connection-bar hidden" id="connection-bar" role="status" aria-live="polite">
       <span id="connection-text" data-i18n="chat.reconnecting">Reconectando...</span>
     </div>
 
     <!-- Header -->
     <header class="chat-header">
       <div class="header-left">
-        <span class="logo-small">🗼</span>
+        <span class="logo-small" aria-hidden="true">🗼</span>
         <span class="header-title">BabelChat</span>
       </div>
       <div class="header-center">
         <span class="room-label" data-i18n="chat.room_label">Sala</span>
         <span class="room-id" id="room-id-display"></span>
-        <span class="room-lock hidden" id="room-lock" data-i18n-title="chat.room_lock_title" title="Sala protegida com senha">🔒</span>
+        <span class="room-lock hidden" id="room-lock" data-i18n-title="chat.room_lock_title" data-i18n-aria-label="chat.room_lock_title" title="Sala protegida com senha" aria-label="Sala protegida com senha" role="img">🔒</span>
         <button class="btn-copy" id="btn-copy-link" data-i18n="chat.copy_link">📋 Copiar link</button>
       </div>
       <div class="header-right">
-        <button class="btn-notif" id="btn-notif" data-i18n-title="chat.enable_notifications" title="Ativar notificações">🔔</button>
+        <!-- UI language switcher. Lets the user change the interface language
+             without leaving the room (they previously had to return to landing). -->
+        <div class="ui-lang-wrap">
+          <button class="btn-ui-lang" id="btn-ui-lang" data-i18n-title="chat.change_ui_language" data-i18n-aria-label="chat.change_ui_language" title="Mudar idioma da interface" aria-label="Mudar idioma da interface" aria-haspopup="menu" aria-expanded="false">🌐</button>
+          <div class="ui-lang-menu hidden" id="ui-lang-menu" role="menu" data-i18n-aria-label="chat.change_ui_language" aria-label="Mudar idioma da interface"></div>
+        </div>
+        <button class="btn-notif" id="btn-notif" data-i18n-title="chat.enable_notifications" data-i18n-aria-label="chat.enable_notifications" title="Ativar notificações" aria-label="Ativar notificações">🔔</button>
         <span class="user-badge">
-          <span id="my-lang-flag"></span>
+          <span id="my-lang-flag" aria-hidden="true"></span>
           <span id="my-name"></span>
         </span>
       </div>
@@ -38,31 +44,40 @@
     <div class="chat-body">
 
       <!-- Drag & drop overlay -->
-      <div class="drop-overlay hidden" id="drop-overlay">
+      <div class="drop-overlay hidden" id="drop-overlay" aria-hidden="true">
         <div class="drop-content">
-          <span class="drop-icon">📎</span>
+          <span class="drop-icon" aria-hidden="true">📎</span>
           <p data-i18n="chat.drop_to_send">Solte para enviar</p>
         </div>
       </div>
 
       <!-- Messages -->
-      <main class="messages-area" id="messages-area">
+      <main class="messages-area" id="messages-area" role="log" aria-live="polite" aria-relevant="additions" data-i18n-aria-label="chat.messages_log_label" aria-label="Mensagens da sala">
         <div class="welcome-msg" id="welcome-msg">
-          <div class="welcome-icon">🗼</div>
+          <div class="welcome-icon" aria-hidden="true">🗼</div>
           <p data-i18n="chat.welcome">Bem-vindo ao BabelChat!</p>
           <p class="welcome-sub" data-i18n="chat.welcome_sub">Compartilhe o link da sala para convidar pessoas do mundo todo.</p>
         </div>
       </main>
 
+      <!-- Floating "jump to bottom" pill. Sibling of .messages-area so it
+           stays anchored to .chat-body (position: relative) instead of
+           scrolling with the message content. -->
+      <button class="jump-to-bottom hidden" id="jump-to-bottom" type="button" data-i18n-aria-label="chat.jump_to_bottom_label" aria-label="Ir para a mensagem mais recente">
+        <span id="jump-count">0</span>
+        <span data-i18n="chat.new_messages">novas mensagens</span>
+        <span class="jump-arrow" aria-hidden="true">↓</span>
+      </button>
+
       <!-- Sidebar -->
-      <aside class="sidebar" id="sidebar">
+      <aside class="sidebar" id="sidebar" data-i18n-aria-label="chat.users_list_label" aria-label="Participantes da sala">
         <div class="sidebar-header">
-          <span>👥</span>
+          <span aria-hidden="true">👥</span>
           <span id="user-count">0</span>
         </div>
         <ul class="user-list" id="user-list"></ul>
         <div class="sidebar-footer">
-          <div class="lang-stats" id="lang-stats"></div>
+          <div class="lang-stats" id="lang-stats" aria-hidden="true"></div>
         </div>
       </aside>
 
@@ -70,11 +85,11 @@
 
     <!-- Footer / Input -->
     <footer class="chat-footer">
-      <div class="typing-indicator" id="typing-indicator"></div>
+      <div class="typing-indicator" id="typing-indicator" role="status" aria-live="polite" aria-atomic="true"></div>
 
       <!-- Recording indicator -->
-      <div class="recording-bar hidden" id="recording-bar">
-        <span class="rec-dot"></span>
+      <div class="recording-bar hidden" id="recording-bar" role="status" aria-live="polite">
+        <span class="rec-dot" aria-hidden="true"></span>
         <span id="rec-timer">0:00</span>
         <span class="rec-label" data-i18n="chat.recording">Gravando...</span>
         <button class="btn-rec-cancel" id="btn-rec-cancel" data-i18n="chat.cancel">Cancelar</button>
@@ -82,8 +97,8 @@
 
       <div class="input-area">
         <!-- File attach -->
-        <button class="btn-icon" id="btn-attach" data-i18n-title="chat.attach_title" title="Enviar imagem ou arquivo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="btn-icon" id="btn-attach" data-i18n-title="chat.attach_title" data-i18n-aria-label="chat.attach_title" title="Enviar imagem ou arquivo" aria-label="Enviar imagem ou arquivo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
           </svg>
         </button>
@@ -93,14 +108,16 @@
           type="text"
           id="message-input"
           data-i18n-placeholder="chat.message_placeholder"
+          data-i18n-aria-label="chat.message_placeholder"
           placeholder="Digite sua mensagem..."
+          aria-label="Digite sua mensagem..."
           maxlength="2000"
           autocomplete="off"
         />
 
         <!-- Audio record -->
-        <button class="btn-icon btn-mic" id="btn-mic" data-i18n-title="chat.record_audio_title" title="Gravar áudio">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="btn-icon btn-mic" id="btn-mic" data-i18n-title="chat.record_audio_title" data-i18n-aria-label="chat.record_audio_title" title="Gravar áudio" aria-label="Gravar áudio">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
             <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"></path>
             <path d="M19 10v2a7 7 0 01-14 0v-2"></path>
             <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -109,8 +126,8 @@
         </button>
 
         <!-- Send -->
-        <button class="btn-send" id="btn-send" data-i18n-title="chat.send_title" title="Enviar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <button class="btn-send" id="btn-send" data-i18n-title="chat.send_title" data-i18n-aria-label="chat.send_title" title="Enviar" aria-label="Enviar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" focusable="false">
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
@@ -118,6 +135,19 @@
       </div>
     </footer>
 
+  </div>
+
+  <!-- Upload preview modal. Shown before a file is sent so the user can
+       confirm / cancel / replace. -->
+  <div class="modal-backdrop hidden" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <div class="modal">
+      <h3 class="modal-title" id="upload-modal-title" data-i18n="chat.upload_preview_title">Enviar arquivo</h3>
+      <div class="upload-preview-body" id="upload-preview-body"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-upload-cancel" type="button" data-i18n="chat.cancel">Cancelar</button>
+        <button class="btn-primary" id="btn-upload-confirm" type="button" data-i18n="chat.send_title">Enviar</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>

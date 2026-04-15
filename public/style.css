@@ -30,6 +30,22 @@ body {
 
 .hidden { display: none !important; }
 
+/* ─── Focus ring ──────────────────────────────────────
+   Consistent focus-visible treatment for every interactive element.
+   Applies when focus came from the keyboard; mouse/touch focus stays
+   chrome-less. Individual components can override for tighter spacing. */
+:focus { outline: none; }
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 /* ─── Landing Page ──────────────────────────────────── */
 .landing-page {
   display: flex;
@@ -359,6 +375,54 @@ input[type="password"]::placeholder { color: var(--muted); }
 .btn-notif:hover { opacity: 0.8; border-color: var(--accent); }
 .btn-notif.notif-active { opacity: 1; border-color: var(--green); }
 
+/* ─── UI language switcher (in-chat) ──────────────── */
+.ui-lang-wrap { position: relative; display: inline-block; }
+.btn-ui-lang {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.6;
+}
+.btn-ui-lang:hover,
+.btn-ui-lang[aria-expanded="true"] { opacity: 1; border-color: var(--accent); }
+.ui-lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #1a1a2e;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 200;
+  animation: fadeUp 140ms ease-out;
+}
+.ui-lang-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.ui-lang-item:hover { background: var(--surface2); }
+.ui-lang-item.active { background: var(--surface2); color: var(--accent); font-weight: 600; }
+.ui-lang-flag { font-size: 16px; line-height: 1; }
+
 .user-badge {
   display: flex;
   align-items: center;
@@ -449,17 +513,31 @@ input[type="password"]::placeholder { color: var(--muted); }
 }
 .msg-text { font-size: 14px; line-height: 1.5; word-break: break-word; }
 
-/* Translated from indicator */
+/* Translated from indicator — rendered as a <button> so it's keyboard-
+   focusable and gets proper aria-expanded semantics, but we strip the
+   default button chrome. */
 .msg-original {
+  font: inherit;
   font-size: 11px;
   color: var(--muted);
   margin-top: 6px;
-  padding-top: 6px;
+  padding: 6px 0 0 0;
+  border: none;
   border-top: 1px solid var(--border);
+  background: none;
+  text-align: left;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 6px;
+  row-gap: 2px;
+  width: 100%;
+}
+.msg-original:hover { color: inherit; }
+.msg-original:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 .msg-original-label {
   font-style: italic;
@@ -471,22 +549,26 @@ input[type="password"]::placeholder { color: var(--muted); }
   content: '🌐';
   font-size: 10px;
 }
-.msg-original-label::after {
-  content: ' ▸';
-  font-size: 9px;
-  transition: transform 0.15s;
+.msg-original-caret {
+  font-size: 12px;
+  line-height: 1;
+  align-self: center;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+  display: inline-block;
 }
-.msg-original.expanded .msg-original-label::after {
-  content: ' ▾';
+.msg-original.expanded .msg-original-caret {
+  transform: rotate(180deg);
 }
+/* Panel with the original text, toggled via the [hidden] attribute from JS.
+   Rendered as a sibling of the button (not a child) so the button's
+   accessible name stays "traduzido do X" for screen readers. */
 .msg-original-text {
-  display: none;
+  font-size: 11px;
+  color: var(--muted);
   font-style: italic;
-  padding: 4px 0;
-  opacity: 0.8;
-}
-.msg-original.expanded .msg-original-text {
-  display: block;
+  padding: 4px 0 0 0;
+  opacity: 0.85;
 }
 
 .msg-time {
@@ -677,6 +759,33 @@ input[type="password"]::placeholder { color: var(--muted); }
 .drop-icon { font-size: 48px; display: block; margin-bottom: 8px; }
 .drop-content p { font-size: 16px; font-weight: 600; }
 
+/* ─── Jump-to-bottom pill ───────────────────────────── */
+.jump-to-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  animation: fadeUp 180ms ease-out;
+}
+.jump-to-bottom:hover { filter: brightness(1.1); }
+.jump-to-bottom .jump-arrow { font-size: 15px; line-height: 1; }
+@media (max-width: 640px) {
+  .jump-to-bottom { bottom: 12px; font-size: 12px; padding: 7px 12px; }
+}
+
 /* ─── Media messages ────────────────────────────────── */
 
 /* Image */
@@ -770,6 +879,94 @@ input[type="password"]::placeholder { color: var(--muted); }
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ─── Modal / upload preview ────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeUp 140ms ease-out;
+}
+.modal {
+  background: #1a1a2e;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.modal-actions .btn-primary { margin-top: 0; padding: 10px 18px; font-size: 14px; }
+.btn-secondary {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.btn-secondary:hover { background: var(--surface2); }
+
+.upload-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+}
+.upload-preview-img {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 10px;
+  object-fit: contain;
+  display: block;
+}
+.upload-preview-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+.upload-preview-meta {
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+}
+.upload-preview-name {
+  font-size: 14px;
+  font-weight: 600;
+  word-break: break-all;
+}
+.upload-preview-size {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.audio-preview-player {
+  width: 100%;
+  height: 40px;
+  outline: none;
 }
 
 /* Responsive */

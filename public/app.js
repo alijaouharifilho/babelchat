@@ -35,12 +35,20 @@ const errorText     = document.getElementById('error-text');
 const grid = document.getElementById('lang-grid');
 LANGUAGES.forEach(lang => {
   const btn = document.createElement('button');
+  btn.type = 'button';
   btn.className = 'lang-btn';
   btn.title = lang.name;
-  btn.innerHTML = `<span class="flag">${lang.flag}</span><span class="lang-name">${lang.name}</span>`;
+  // Acts as a radio-style toggle; aria-pressed reflects the selected state
+  // so screen readers announce which language is currently picked.
+  btn.setAttribute('aria-pressed', 'false');
+  btn.innerHTML = `<span class="flag" aria-hidden="true">${lang.flag}</span><span class="lang-name">${lang.name}</span>`;
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.remove('selected');
+      b.setAttribute('aria-pressed', 'false');
+    });
     btn.classList.add('selected');
+    btn.setAttribute('aria-pressed', 'true');
     selectedLang = lang.code;
     validate();
 
@@ -149,11 +157,17 @@ btnEnter.addEventListener('click', () => {
 });
 
 function goToChat(room, name, lang, password, isCreator) {
+  // Password goes via sessionStorage to avoid leaking into browser history,
+  // referer headers or proxy access logs.
+  if (password) {
+    sessionStorage.setItem('babelchat-room-pwd', password);
+  } else {
+    sessionStorage.removeItem('babelchat-room-pwd');
+  }
   const params = new URLSearchParams({
     room,
     name,
     lang,
-    ...(password && { pwd: password }),
     ...(isCreator && { creator: '1' }),
   });
   window.location.href = `chat.html?${params.toString()}`;

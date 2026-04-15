@@ -67,6 +67,15 @@
       'chat.person': 'pessoa',
       'chat.persons': 'pessoas',
       'chat.you_badge': 'você',
+      'chat.new_messages': 'novas mensagens',
+      'chat.change_ui_language': 'Mudar idioma da interface',
+      'chat.upload_preview_title': 'Enviar arquivo',
+      'chat.audio_preview_title': 'Revisar áudio',
+      'chat.audio_rerecord': 'Regravar',
+      'chat.audio_discard': 'Descartar',
+      'chat.jump_to_bottom_label': 'Ir para a mensagem mais recente',
+      'chat.messages_log_label': 'Mensagens da sala',
+      'chat.users_list_label': 'Participantes da sala',
     },
 
     // ═══════════════════════════════════════════════════
@@ -133,6 +142,15 @@
       'chat.person': 'person',
       'chat.persons': 'people',
       'chat.you_badge': 'you',
+      'chat.new_messages': 'new messages',
+      'chat.change_ui_language': 'Change interface language',
+      'chat.upload_preview_title': 'Send file',
+      'chat.audio_preview_title': 'Review audio',
+      'chat.audio_rerecord': 'Re-record',
+      'chat.audio_discard': 'Discard',
+      'chat.jump_to_bottom_label': 'Jump to latest message',
+      'chat.messages_log_label': 'Room messages',
+      'chat.users_list_label': 'Room participants',
     },
 
     // ═══════════════════════════════════════════════════
@@ -199,6 +217,15 @@
       'chat.person': 'persona',
       'chat.persons': 'personas',
       'chat.you_badge': 'tú',
+      'chat.new_messages': 'mensajes nuevos',
+      'chat.change_ui_language': 'Cambiar idioma de la interfaz',
+      'chat.upload_preview_title': 'Enviar archivo',
+      'chat.audio_preview_title': 'Revisar audio',
+      'chat.audio_rerecord': 'Volver a grabar',
+      'chat.audio_discard': 'Descartar',
+      'chat.jump_to_bottom_label': 'Ir al mensaje más reciente',
+      'chat.messages_log_label': 'Mensajes de la sala',
+      'chat.users_list_label': 'Participantes de la sala',
     },
 
     // ═══════════════════════════════════════════════════
@@ -265,6 +292,15 @@
       'chat.person': 'personne',
       'chat.persons': 'personnes',
       'chat.you_badge': 'vous',
+      'chat.new_messages': 'nouveaux messages',
+      'chat.change_ui_language': 'Changer la langue de l\'interface',
+      'chat.upload_preview_title': 'Envoyer un fichier',
+      'chat.audio_preview_title': 'Vérifier l\'audio',
+      'chat.audio_rerecord': 'Réenregistrer',
+      'chat.audio_discard': 'Supprimer',
+      'chat.jump_to_bottom_label': 'Aller au dernier message',
+      'chat.messages_log_label': 'Messages du salon',
+      'chat.users_list_label': 'Participants du salon',
     },
 
     // ═══════════════════════════════════════════════════
@@ -331,6 +367,15 @@
       'chat.person': 'Person',
       'chat.persons': 'Personen',
       'chat.you_badge': 'du',
+      'chat.new_messages': 'neue Nachrichten',
+      'chat.change_ui_language': 'Oberflächensprache ändern',
+      'chat.upload_preview_title': 'Datei senden',
+      'chat.audio_preview_title': 'Audio prüfen',
+      'chat.audio_rerecord': 'Neu aufnehmen',
+      'chat.audio_discard': 'Verwerfen',
+      'chat.jump_to_bottom_label': 'Zur neuesten Nachricht springen',
+      'chat.messages_log_label': 'Raum-Nachrichten',
+      'chat.users_list_label': 'Raum-Teilnehmer',
     },
 
     // ═══════════════════════════════════════════════════
@@ -397,6 +442,15 @@
       'chat.person': '人',
       'chat.persons': '人',
       'chat.you_badge': '你',
+      'chat.new_messages': '条新消息',
+      'chat.change_ui_language': '更改界面语言',
+      'chat.upload_preview_title': '发送文件',
+      'chat.audio_preview_title': '检查音频',
+      'chat.audio_rerecord': '重新录制',
+      'chat.audio_discard': '丢弃',
+      'chat.jump_to_bottom_label': '跳转到最新消息',
+      'chat.messages_log_label': '房间消息',
+      'chat.users_list_label': '房间参与者',
     },
 
     // ═══════════════════════════════════════════════════
@@ -463,6 +517,15 @@
       'chat.person': '人',
       'chat.persons': '人',
       'chat.you_badge': 'あなた',
+      'chat.new_messages': '件の新着メッセージ',
+      'chat.change_ui_language': 'インターフェースの言語を変更',
+      'chat.upload_preview_title': 'ファイルを送信',
+      'chat.audio_preview_title': '音声を確認',
+      'chat.audio_rerecord': '録音し直す',
+      'chat.audio_discard': '破棄',
+      'chat.jump_to_bottom_label': '最新のメッセージへ移動',
+      'chat.messages_log_label': 'ルームのメッセージ',
+      'chat.users_list_label': 'ルームの参加者',
     },
 
     // ═══════════════════════════════════════════════════
@@ -529,6 +592,15 @@
       'chat.person': 'شخص',
       'chat.persons': 'أشخاص',
       'chat.you_badge': 'أنت',
+      'chat.new_messages': 'رسائل جديدة',
+      'chat.change_ui_language': 'تغيير لغة الواجهة',
+      'chat.upload_preview_title': 'إرسال ملف',
+      'chat.audio_preview_title': 'مراجعة الصوت',
+      'chat.audio_rerecord': 'إعادة التسجيل',
+      'chat.audio_discard': 'تجاهل',
+      'chat.jump_to_bottom_label': 'الانتقال إلى آخر رسالة',
+      'chat.messages_log_label': 'رسائل الغرفة',
+      'chat.users_list_label': 'المشاركون في الغرفة',
     },
 
     // ═══════════════════════════════════════════════════
@@ -595,6 +667,15 @@
       'chat.person': 'человек',
       'chat.persons': 'человек',
       'chat.you_badge': 'вы',
+      'chat.new_messages': 'новых сообщений',
+      'chat.change_ui_language': 'Изменить язык интерфейса',
+      'chat.upload_preview_title': 'Отправить файл',
+      'chat.audio_preview_title': 'Проверить аудио',
+      'chat.audio_rerecord': 'Записать заново',
+      'chat.audio_discard': 'Отклонить',
+      'chat.jump_to_bottom_label': 'Перейти к последнему сообщению',
+      'chat.messages_log_label': 'Сообщения комнаты',
+      'chat.users_list_label': 'Участники комнаты',
     },
 
     // ═══════════════════════════════════════════════════
@@ -661,6 +742,15 @@
       'chat.person': 'व्यक्ति',
       'chat.persons': 'लोग',
       'chat.you_badge': 'आप',
+      'chat.new_messages': 'नए संदेश',
+      'chat.change_ui_language': 'इंटरफ़ेस की भाषा बदलें',
+      'chat.upload_preview_title': 'फ़ाइल भेजें',
+      'chat.audio_preview_title': 'ऑडियो की समीक्षा करें',
+      'chat.audio_rerecord': 'फिर से रिकॉर्ड करें',
+      'chat.audio_discard': 'हटाएं',
+      'chat.jump_to_bottom_label': 'नवीनतम संदेश पर जाएं',
+      'chat.messages_log_label': 'कमरे के संदेश',
+      'chat.users_list_label': 'कमरे के प्रतिभागी',
     },
 
     // ═══════════════════════════════════════════════════
@@ -727,6 +817,15 @@
       'chat.person': '명',
       'chat.persons': '명',
       'chat.you_badge': '나',
+      'chat.new_messages': '개의 새 메시지',
+      'chat.change_ui_language': '인터페이스 언어 변경',
+      'chat.upload_preview_title': '파일 보내기',
+      'chat.audio_preview_title': '오디오 확인',
+      'chat.audio_rerecord': '다시 녹음',
+      'chat.audio_discard': '버리기',
+      'chat.jump_to_bottom_label': '최신 메시지로 이동',
+      'chat.messages_log_label': '방 메시지',
+      'chat.users_list_label': '방 참가자',
     },
 
     // ═══════════════════════════════════════════════════
@@ -793,6 +892,15 @@
       'chat.person': 'persona',
       'chat.persons': 'persone',
       'chat.you_badge': 'tu',
+      'chat.new_messages': 'nuovi messaggi',
+      'chat.change_ui_language': 'Cambia lingua dell\'interfaccia',
+      'chat.upload_preview_title': 'Invia file',
+      'chat.audio_preview_title': 'Controlla audio',
+      'chat.audio_rerecord': 'Registra di nuovo',
+      'chat.audio_discard': 'Scarta',
+      'chat.jump_to_bottom_label': 'Vai al messaggio più recente',
+      'chat.messages_log_label': 'Messaggi della stanza',
+      'chat.users_list_label': 'Partecipanti della stanza',
     },
 
     // ═══════════════════════════════════════════════════
@@ -859,6 +967,15 @@
       'chat.person': 'kişi',
       'chat.persons': 'kişi',
       'chat.you_badge': 'sen',
+      'chat.new_messages': 'yeni mesaj',
+      'chat.change_ui_language': 'Arayüz dilini değiştir',
+      'chat.upload_preview_title': 'Dosya gönder',
+      'chat.audio_preview_title': 'Sesi gözden geçir',
+      'chat.audio_rerecord': 'Yeniden kaydet',
+      'chat.audio_discard': 'Sil',
+      'chat.jump_to_bottom_label': 'En son mesaja git',
+      'chat.messages_log_label': 'Oda mesajları',
+      'chat.users_list_label': 'Oda katılımcıları',
     },
 
     // ═══════════════════════════════════════════════════
@@ -925,6 +1042,15 @@
       'chat.person': 'osoba',
       'chat.persons': 'osób',
       'chat.you_badge': 'ty',
+      'chat.new_messages': 'nowych wiadomości',
+      'chat.change_ui_language': 'Zmień język interfejsu',
+      'chat.upload_preview_title': 'Wyślij plik',
+      'chat.audio_preview_title': 'Sprawdź nagranie',
+      'chat.audio_rerecord': 'Nagraj ponownie',
+      'chat.audio_discard': 'Odrzuć',
+      'chat.jump_to_bottom_label': 'Przejdź do najnowszej wiadomości',
+      'chat.messages_log_label': 'Wiadomości pokoju',
+      'chat.users_list_label': 'Uczestnicy pokoju',
     },
 
     // ═══════════════════════════════════════════════════
@@ -991,6 +1117,15 @@
       'chat.person': 'คน',
       'chat.persons': 'คน',
       'chat.you_badge': 'คุณ',
+      'chat.new_messages': 'ข้อความใหม่',
+      'chat.change_ui_language': 'เปลี่ยนภาษาของอินเทอร์เฟซ',
+      'chat.upload_preview_title': 'ส่งไฟล์',
+      'chat.audio_preview_title': 'ตรวจสอบเสียง',
+      'chat.audio_rerecord': 'บันทึกใหม่',
+      'chat.audio_discard': 'ทิ้ง',
+      'chat.jump_to_bottom_label': 'ไปที่ข้อความล่าสุด',
+      'chat.messages_log_label': 'ข้อความของห้อง',
+      'chat.users_list_label': 'ผู้เข้าร่วมห้อง',
     },
   };
 
@@ -1024,6 +1159,11 @@
     // Tooltips
     document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
       el.title = t(el.getAttribute('data-i18n-title'));
+    });
+    // ARIA labels. For icon-only buttons the accessible name comes from
+    // aria-label, not visible text, so we translate it the same way.
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(function (el) {
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
   }
 

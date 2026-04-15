@@ -10,21 +10,21 @@
   <div class="landing">
     <div class="card">
       <div class="logo">
-        <div class="logo-icon">🗼</div>
+        <div class="logo-icon" aria-hidden="true">🗼</div>
         <h1>BabelChat</h1>
         <p class="typewriter" id="typewriter">
-          <span id="typewriter-text">Converse com qualquer pessoa, em qualquer idioma.</span><span class="typewriter-cursor">|</span>
+          <span id="typewriter-text">Converse com qualquer pessoa, em qualquer idioma.</span><span class="typewriter-cursor" aria-hidden="true">|</span>
         </p>
       </div>
 
       <!-- Banner: joining existing room -->
-      <div id="room-banner" class="room-banner hidden">
-        <span>🔗</span>
+      <div id="room-banner" class="room-banner hidden" role="status" aria-live="polite">
+        <span aria-hidden="true">🔗</span>
         <span id="room-banner-text"></span>
       </div>
 
       <!-- Error banner -->
-      <div id="error-banner" class="error-banner hidden">
+      <div id="error-banner" class="error-banner hidden" role="alert">
         <span id="error-text"></span>
       </div>
 
