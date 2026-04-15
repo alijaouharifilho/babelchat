@@ -129,7 +129,12 @@ socket.on('disconnect', () => {
 });
 socket.on('reconnect', () => { connBar.classList.add('hidden'); });
 
-socket.on('error-msg', ({ message }) => {
+socket.on('error-msg', ({ message, fatal }) => {
+  if (fatal === false) {
+    // Transient error (e.g. rate limit) — surface inline, keep the user in the room.
+    addSystemMsg(message);
+    return;
+  }
   alert(message);
   window.location.href = `/?room=${encodeURIComponent(roomId)}`;
 });

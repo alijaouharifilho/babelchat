@@ -113,7 +113,8 @@ async function detectLanguage(text) {
     });
     const code = res.choices[0].message.content.trim().toLowerCase();
     return LANG_NAMES[code] ? code : null;
-  } catch {
+  } catch (err) {
+    console.error('Erro ao detectar idioma:', err.message);
     return null;
   }
 }

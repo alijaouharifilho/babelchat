@@ -6,6 +6,7 @@ const fs = require('fs');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const { translate, transcribe, detectLanguage, LANG_NAMES } = require('./translator');
 
 const app = express();
@@ -21,6 +22,23 @@ const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const UPLOADS_TMP = path.join(UPLOADS_DIR, '_tmp');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 if (!fs.existsSync(UPLOADS_TMP)) fs.mkdirSync(UPLOADS_TMP);
+
+// Janitor: on boot, rooms live in memory only, so every room directory
+// on disk is orphaned. Wipe them (and any leftover tmp files) once.
+(function cleanupOrphanedUploads() {
+  fs.promises.readdir(UPLOADS_DIR, { withFileTypes: true })
+    .then(entries => Promise.all(entries.map(entry => {
+      const p = path.join(UPLOADS_DIR, entry.name);
+      if (entry.name === '_tmp') {
+        // Empty the tmp dir but keep it.
+        return fs.promises.rm(p, { recursive: true, force: true })
+          .then(() => fs.promises.mkdir(p, { recursive: true }));
+      }
+      return fs.promises.rm(p, { recursive: true, force: true });
+    })))
+    .then(() => console.log('Uploads: diretórios órfãos limpos.'))
+    .catch(err => console.error('Falha ao limpar uploads no boot:', err.message));
+})();
 
 // ─── Multer config ─────────────────────────────────────
 // NOTE: Save to _tmp first because multer's destination callback
@@ -63,11 +81,11 @@ const upload = multer({
 });
 
 // Move file from _tmp to the correct room directory
-function moveToRoomDir(file, roomId) {
+async function moveToRoomDir(file, roomId) {
   const roomDir = path.join(UPLOADS_DIR, roomId);
-  if (!fs.existsSync(roomDir)) fs.mkdirSync(roomDir, { recursive: true });
+  await fs.promises.mkdir(roomDir, { recursive: true });
   const newPath = path.join(roomDir, file.filename);
-  fs.renameSync(file.path, newPath);
+  await fs.promises.rename(file.path, newPath);
   return newPath;
 }
 
@@ -131,10 +149,9 @@ function broadcastMessage(roomId, room, msgBase, translations, senderSid, sender
 
 function cleanupRoomFiles(roomId) {
   const roomDir = path.join(UPLOADS_DIR, roomId);
-  if (fs.existsSync(roomDir)) {
-    fs.rmSync(roomDir, { recursive: true, force: true });
-    console.log(`[${roomId}] Arquivos removidos.`);
-  }
+  fs.promises.rm(roomDir, { recursive: true, force: true })
+    .then(() => console.log(`[${roomId}] Arquivos removidos.`))
+    .catch(err => console.error(`[${roomId}] Falha ao remover arquivos:`, err.message));
 }
 
 // ─── API: check room ───────────────────────────────────
@@ -162,8 +179,18 @@ function uploadSingle(req, res, next) {
   });
 }
 
+// Rate limit: 20 uploads / minute / IP. Protects the OpenAI Whisper bill
+// and the disk against abuse from anyone who guesses a room ID.
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many uploads, slow down.' },
+});
+
 // ─── API: file upload ──────────────────────────────────
-app.post('/api/upload', uploadSingle, async (req, res) => {
+app.post('/api/upload', uploadLimiter, uploadSingle, async (req, res) => {
   try {
     const { roomId, socketId } = req.body;
     const file = req.file;
@@ -191,7 +218,7 @@ app.post('/api/upload', uploadSingle, async (req, res) => {
     const userLang = sender.language;
 
     // Move file from _tmp to the correct room directory
-    const newPath = moveToRoomDir(file, roomId);
+    const newPath = await moveToRoomDir(file, roomId);
     file.path = newPath;
 
     const type = getFileType(file.mimetype);
@@ -252,10 +279,26 @@ app.post('/api/upload', uploadSingle, async (req, res) => {
   }
 });
 
+// Per-socket sliding-window rate limit. Caps message bursts so a single
+// client can't drain the translation API budget.
+const MSG_LIMIT = 60;              // max messages...
+const MSG_WINDOW_MS = 60 * 1000;   // ...per minute per socket.
+function makeMsgLimiter() {
+  const hits = [];
+  return function allow() {
+    const now = Date.now();
+    while (hits.length && now - hits[0] > MSG_WINDOW_MS) hits.shift();
+    if (hits.length >= MSG_LIMIT) return false;
+    hits.push(now);
+    return true;
+  };
+}
+
 // ─── Socket.io ─────────────────────────────────────────
 io.on('connection', (socket) => {
   let currentRoom = null;
   let currentUser = null;
+  const msgAllowed = makeMsgLimiter();
 
   socket.on('join', ({ roomId, name, language, password, isCreator }) => {
     if (!roomId || !name || !language) return;
@@ -297,6 +340,12 @@ io.on('connection', (socket) => {
 
   socket.on('message', async ({ text }) => {
     if (!currentRoom || !currentUser || !text?.trim()) return;
+    if (!msgAllowed()) {
+      return socket.emit('error-msg', {
+        message: 'Você está enviando mensagens rápido demais.',
+        fatal: false,
+      });
+    }
 
     const room = rooms.get(currentRoom);
     if (!room) return;
