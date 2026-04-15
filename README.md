@@ -53,14 +53,16 @@ Converse com qualquer pessoa, em qualquer idioma — sem barreiras, zero configu
 | | Recurso |
 |---|---|
 | 🌍 | **15 idiomas** — PT, EN, ES, FR, DE, ZH, JA, AR, RU, HI, KO, IT, TR, PL, TH |
-| 🏳️ | **Interface traduzida** — toda a UI muda de idioma ao clicar na bandeira |
-| 🖼️ | **Imagens, arquivos e áudio** — envie mídia diretamente no chat |
+| 🏳️ | **Interface traduzida** — toda a UI muda de idioma ao clicar na bandeira, dentro ou fora da sala |
+| 🖼️ | **Imagens, arquivos e áudio** — preview antes de enviar, regravar áudio se não ficar bom |
 | 🎙️ | **Transcrição de áudio** — voz transcrita automaticamente via Whisper antes de traduzir |
-| 🔒 | **Salas com senha** — proteja conversas privadas |
+| 🔒 | **Salas com senha** — proteja conversas privadas (senha via `sessionStorage`, não no URL) |
 | ⚡ | **Cache de tradução** — LRU cache evita chamadas duplicadas à API |
-| 🌐 | **Texto original** — clique em qualquer mensagem para ver o original |
-| 🔔 | **Notificações** — som + browser notification fora da aba |
+| 🛡️ | **Rate limiting** — 20 uploads/min e 60 mensagens/min protegem a conta e o servidor |
+| 🌐 | **Texto original** — clique em qualquer mensagem traduzida para ver o original |
+| 🔔 | **Notificações** — som + browser notification fora da aba, com badge no título |
 | 📱 | **Mobile-first** — funciona no iPhone/Android, input não some atrás do teclado |
+| ♿ | **Acessibilidade** — navegação por teclado, `role=log` com live regions, labels i18n em todos os ícones |
 | ♻️ | **Salas efêmeras** — somem automaticamente quando todos saem |
 | 🔇 | **Zero persistência** — nada é salvo, nada é logado |
 
@@ -133,7 +135,7 @@ babelchat/
 │   ├── index.html     # Landing page
 │   ├── chat.html      # Chat
 │   ├── style.css      # Dark theme
-│   ├── i18n.js        # Traduções da UI (15 idiomas × 62 chaves)
+│   ├── i18n.js        # Traduções da UI (15 idiomas × 69 chaves)
 │   ├── app.js         # Lógica da landing + typewriter animation
 │   └── chat.js        # Lógica do chat (Socket.io, upload, áudio)
 └── package.json
@@ -148,10 +150,13 @@ babelchat/
 - [x] Upload de imagens, arquivos e áudio com Whisper
 - [x] Deploy público — [babelchat.com.br](https://babelchat.com.br)
 - [x] Layout mobile responsivo (iOS Safari)
+- [x] Rate limiting (uploads + mensagens)
+- [x] Preview antes de enviar arquivos / regravar áudios
+- [x] Acessibilidade — navegação por teclado, ARIA completo
+- [ ] Agrupamento de mensagens consecutivas do mesmo autor
 - [ ] Reações com emoji nas mensagens
 - [ ] Salas permanentes com Redis
 - [ ] PWA / instalável no celular
-- [ ] Rate limiting por IP
 
 ---
 
